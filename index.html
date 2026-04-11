@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Bingo Constructor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        /* ---------- CSS Variables (Dark Theme default) ---------- */
+        :root {
+            --bg-body: #1a1f2b;
+            --bg-header: #252c3b;
+            --border-light: #3a4458;
+            --text-primary: #e2e8f0;
+            --text-secondary: #a0aec0;
+            --bg-sidebar: #1e2533;
+            --bg-board-bg: #2d3748;
+            --cell-bg-light: #ffffff;
+            --cell-bg-dark: #2a3446;
+            --cell-shadow: rgba(0,0,0,0.05);
+            --btn-primary-bg: #3b82f6;
+            --btn-primary-text: white;
+            --btn-outline-bg: #2d3748;
+            --btn-outline-text: #cbd5e1;
+            --btn-outline-border: #4a5568;
+            --panel-bg: #252c3b;
+            --board-item-bg: #2a3446;
+            --board-item-active-bg: #3b4a62;
+            --mode-switch-bg: #2d3748;
+            --input-border: #4a5568;
+            --selected-outline: #f59e0b;
+            --cell-text-color-light: #1e293b;
+            --cell-text-color-dark: #f1f5f9;
+            --cell-size: 120px;
+        }
+
+        body.light {
+            --bg-body: #f5f7fb;
+            --bg-header: #ffffff;
+            --border-light: #e0e7ef;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --bg-sidebar: #ffffff;
+            --bg-board-bg: #d9e2ec;
+            --cell-bg-light: #ffffff;
+            --cell-bg-dark: #2a3446;
+            --cell-shadow: rgba(0,0,0,0.05);
+            --btn-primary-bg: #1e88e5;
+            --btn-primary-text: white;
+            --btn-outline-bg: white;
+            --btn-outline-text: #1e3a5f;
+            --btn-outline-border: #b0c8dd;
+            --panel-bg: white;
+            --board-item-bg: #f0f5fa;
+            --board-item-active-bg: #e1ebf5;
+            --mode-switch-bg: #eef2f6;
+            --input-border: #ccd7e4;
+            --selected-outline: #ffb74d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .app-header {
+            background: var(--bg-header);
+            padding: 12px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .mode-switch {
+            display: flex;
+            background: var(--mode-switch-bg);
+            border-radius: 40px;
+            padding: 3px;
+        }
+
+        .mode-btn {
+            border: none;
+            background: transparent;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
+            box-shadow: 0 2px 6px rgba(30,136,229,0.3);
+        }
+
+        .lang-selector select, .theme-toggle button {
+            padding: 8px 12px;
+            border-radius: 30px;
+            border: 1px solid var(--input-border);
+            background: var(--bg-header);
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .board-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .board-controls input {
+            width: 70px;
+            padding: 8px;
+            border-radius: 20px;
+            border: 1px solid var(--input-border);
+            background: var(--bg-header);
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .board-controls input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border-radius: 30px;
+            border: none;
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-outline {
+            background: var(--btn-outline-bg);
+            color: var(--btn-outline-text);
+            border: 1px solid var(--btn-outline-border);
+            box-shadow: none;
+        }
+
+        .btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-outline:hover {
+            background: var(--mode-switch-bg);
+        }
+
+        .app-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .boards-sidebar {
+            width: 260px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-light);
+            padding: 16px 10px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .main-area {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .board-meta {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+        }
+
+        .board-meta input, .board-meta textarea, .board-meta select {
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--input-border);
+            background: var(--bg-header);
+            color: var(--text-primary);
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .board-meta input {
+            height: 44px;
+        }
+
+        .board-meta textarea {
+            min-height: 80px;
+            height: 80px;
+            resize: none;
+        }
+
+        .bingo-type-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .bingo-type-selector select {
+            flex: 1;
+        }
+
+        .bingo-grid {
+            display: grid;
+            gap: 6px;
+            background: var(--bg-board-bg);
+            padding: 12px;
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            width: fit-content;
+        }
+
+        .bingo-cell {
+            background: var(--cell-bg-dark);
+            border-radius: 12px;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 2px 4px var(--cell-shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 4px;
+            transition: 0.15s;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            width: var(--cell-size);
+            height: var(--cell-size);
+            overflow: hidden;
+            color: var(--cell-text-color-dark);
+            flex-shrink: 0;
+        }
+
+        body.light .bingo-cell {
+            background: var(--cell-bg-light);
+            color: var(--cell-text-color-light);
+        }
+
+        .bingo-cell.completed {
+            opacity: 0.55;
+            filter: grayscale(0.3);
+        }
+
+        .bingo-cell.completed .cell-text {
+            text-decoration: line-through;
+        }
+
+        .bingo-cell.selected-creator {
+            outline: 4px solid var(--selected-outline);
+            outline-offset: 2px;
+            z-index: 2;
+        }
+
+        .cell-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cell-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .cell-text {
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+            max-height: 5.2em;
+            padding: 0 2px;
+        }
+
+        .cell-caption {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            text-align: center;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-height: 2.6em;
+            line-height: 1.3;
+        }
+
+        .property-panel {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-top: 20px;
+            max-width: 500px;
+            color: var(--text-primary);
+        }
+
+        .property-panel input, .property-panel textarea {
+            background: var(--bg-header);
+            border: 1px solid var(--input-border);
+            border-radius: 16px;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-size: 14px;
+            width: 100%;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        .property-panel input:focus, .property-panel textarea:focus {
+            border-color: var(--btn-primary-bg);
+            box-shadow: 0 0 0 3px rgba(30,136,229,0.2);
+            outline: none;
+        }
+
+        .boards-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .board-item {
+            padding: 12px 12px;
+            margin-bottom: 8px;
+            background: var(--board-item-bg);
+            border-radius: 16px;
+            cursor: pointer;
+            border-left: 5px solid transparent;
+            transition: 0.1s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-primary);
+        }
+
+        .board-item span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .board-item.active {
+            border-left-color: var(--btn-primary-bg);
+            background: var(--board-item-active-bg);
+            font-weight: 600;
+        }
+
+        .board-item-actions button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.6;
+            color: var(--text-primary);
+        }
+
+        .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        input, textarea, select {
+            outline: none;
+        }
+
+        .theme-toggle {
+            margin-left: auto;
+        }
+        
+        .image-upload-wrap {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .image-upload-wrap input[type="text"] {
+            flex: 1;
+        }
+
+        .btn-icon {
+            padding: 8px 12px;
+            border-radius: 30px;
+        }
+
+        .bingo-message, .modal-message {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--btn-primary-bg);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            z-index: 9999;
+            animation: fadeInOut 2s ease forwards;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .modal-box {
+            background: var(--panel-bg);
+            padding: 24px;
+            border-radius: 32px;
+            max-width: 320px;
+            text-align: center;
+            color: var(--text-primary);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+        }
+
+        .modal-box p {
+            margin: 16px 0;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) scale(0.8); }
+            15% { opacity: 1; transform: translateX(-50%) scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translateX(-50%) scale(0.8); }
+        }
+    </style>
+</head>
+<body class="dark"> <!-- по умолчанию тёмная тема -->
+<div class="app-header">
+    <div class="mode-switch">
+        <button class="mode-btn active" data-mode="creator" data-i18n="creator">✏️ Creator</button>
+        <button class="mode-btn" data-mode="player" data-i18n="player">🎮 Player</button>
+    </div>
+    <div class="lang-selector">
+        <select id="lang-select">
+            <option value="en" selected>🇺🇸 US (English)</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="zh">🇨🇳 中文</option>
+        </select>
+    </div>
+    <div class="board-controls">
+        <input type="number" id="rows-input" min="1" max="8" value="3" data-i18n-placeholder="rows">
+        <span>✕</span>
+        <input type="number" id="cols-input" min="1" max="8" value="3" data-i18n-placeholder="cols">
+    </div>
+    <div class="flex-row">
+        <button class="btn-outline btn" id="save-bingo-btn" data-i18n="saveBingo">💾 Save .bingo</button>
+        <button class="btn-outline btn" id="load-bingo-input-btn" data-i18n="loadBingo">📂 Load .bingo</button>
+        <input type="file" id="bingo-file-input" accept=".bingo,application/json" style="display:none;">
+        <button class="btn" id="export-png-btn" data-i18n="exportPng">🖼️ Save PNG</button>
+    </div>
+    <div class="theme-toggle">
+        <button id="theme-toggle-btn" class="btn-outline">☀️ Light</button>
+    </div>
+</div>
+
+<div class="app-container">
+    <div class="boards-sidebar">
+        <h3 style="margin-top:0;" data-i18n="boards">📋 Boards</h3>
+        <button class="btn-outline btn" id="new-board-btn" style="width:100%; margin-bottom:15px;" data-i18n="newBoard">➕ New Board</button>
+        <ul class="boards-list" id="boards-list"></ul>
+        <p style="font-size:13px; color: var(--text-secondary);" data-i18n="clickToSelect">Click board to select</p>
+    </div>
+
+    <div class="main-area">
+        <div id="active-board-container"></div>
+        <div id="property-panel" class="property-panel" style="display: none;">
+            <h4 data-i18n="properties">⚙️ Cell Properties</h4>
+            <div class="flex-row">
+                <label style="width:100%;"><span data-i18n="cellText">Text</span><br>
+                    <input type="text" id="cell-text" placeholder="">
+                </label>
+            </div>
+            <div class="flex-row">
+                <label style="width:100%;"><span data-i18n="cellImage">Image</span></label>
+                <div class="image-upload-wrap">
+                    <input type="text" id="cell-image" placeholder="URL or select file">
+                    <button type="button" class="btn-outline btn-icon" id="select-image-btn" title="Select image">📁</button>
+                    <button type="button" class="btn-outline btn-icon" id="clear-image-btn" title="Clear image">🗑️</button>
+                    <input type="file" id="image-file-input" accept="image/*" style="display:none;">
+                </div>
+            </div>
+            <div class="flex-row">
+                <label style="width:100%;"><span data-i18n="cellCaption">Caption</span><br>
+                    <input type="text" id="cell-caption" placeholder="">
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        "use strict";
+
+        // Предотвращение ошибок dragEvent
+        window.addEventListener('drag', (e) => e.preventDefault());
+        window.addEventListener('drop', (e) => e.preventDefault());
+        document.addEventListener('dragover', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => e.preventDefault());
+
+        // Локализация (без textHint)
+        const i18n = {
+            en: {
+                creator: '✏️ Creator',
+                player: '🎮 Player',
+                rows: 'Rows',
+                cols: 'Columns',
+                saveBingo: '💾 Save .bingo',
+                loadBingo: '📂 Load .bingo',
+                exportPng: '🖼️ Save PNG',
+                newBoard: '➕ New Board',
+                boards: '📋 Boards',
+                title: 'Title',
+                description: 'Description',
+                bingoType: 'Bingo type',
+                types: {
+                    standard: 'Standard (line)',
+                    fullHouse: 'Full House',
+                    diagonal: 'Diagonal',
+                    doubleDiagonal: 'Double Diagonal',
+                    vertical: 'Vertical',
+                    horizontal: 'Horizontal',
+                    cross: 'Cross (vertical+horizontal)'
+                },
+                cellText: 'Text',
+                cellImage: 'Image',
+                cellCaption: 'Caption',
+                properties: '⚙️ Cell Properties',
+                clickToSelect: 'Click board to select',
+                darkTheme: '🌙 Dark',
+                lightTheme: '☀️ Light',
+                defaultCellText: '',
+                noBoard: 'No active board',
+                selectImage: 'Select image',
+                bingoMessage: '🎉 BINGO! 🎉',
+                characters: 'characters',
+                ok: 'OK'
+            },
+            ru: {
+                creator: '✏️ Создатель',
+                player: '🎮 Пользователь',
+                rows: 'Ряды',
+                cols: 'Столбцы',
+                saveBingo: '💾 Сохранить .bingo',
+                loadBingo: '📂 Загрузить .bingo',
+                exportPng: '🖼️ Сохранить PNG',
+                newBoard: '➕ Новая доска',
+                boards: '📋 Доски',
+                title: 'Название',
+                description: 'Описание',
+                bingoType: 'Тип бинго',
+                types: {
+                    standard: 'Обычное (линия)',
+                    fullHouse: 'Фулл-хаус',
+                    diagonal: 'Диагональ',
+                    doubleDiagonal: 'Две диагонали',
+                    vertical: 'Вертикаль',
+                    horizontal: 'Горизонталь',
+                    cross: 'Крест (верт+гориз)'
+                },
+                cellText: 'Текст',
+                cellImage: 'Изображение',
+                cellCaption: 'Подпись',
+                properties: '⚙️ Свойства ячейки',
+                clickToSelect: 'Нажмите на доску для выбора',
+                darkTheme: '🌙 Тёмная',
+                lightTheme: '☀️ Светлая',
+                defaultCellText: '',
+                noBoard: 'Нет активной доски',
+                selectImage: 'Выбрать',
+                bingoMessage: '🎉 БИНГО! 🎉',
+                characters: 'символов',
+                ok: 'ОК'
+            },
+            es: {
+                creator: '✏️ Creador',
+                player: '🎮 Jugador',
+                rows: 'Filas',
+                cols: 'Columnas',
+                saveBingo: '💾 Guardar .bingo',
+                loadBingo: '📂 Cargar .bingo',
+                exportPng: '🖼️ Guardar PNG',
+                newBoard: '➕ Nuevo tablero',
+                boards: '📋 Tableros',
+                title: 'Título',
+                description: 'Descripción',
+                bingoType: 'Tipo de bingo',
+                types: {
+                    standard: 'Estándar (línea)',
+                    fullHouse: 'Casa llena',
+                    diagonal: 'Diagonal',
+                    doubleDiagonal: 'Doble diagonal',
+                    vertical: 'Vertical',
+                    horizontal: 'Horizontal',
+                    cross: 'Cruz (vert+horiz)'
+                },
+                cellText: 'Texto',
+                cellImage: 'Imagen',
+                cellCaption: 'Subtítulo',
+                properties: '⚙️ Propiedades',
+                clickToSelect: 'Clic para seleccionar',
+                darkTheme: '🌙 Oscuro',
+                lightTheme: '☀️ Claro',
+                defaultCellText: '',
+                noBoard: 'Sin tablero',
+                selectImage: 'Seleccionar',
+                bingoMessage: '🎉 ¡BINGO! 🎉',
+                characters: 'caracteres',
+                ok: 'OK'
+            },
+            fr: {
+                creator: '✏️ Créateur',
+                player: '🎮 Joueur',
+                rows: 'Lignes',
+                cols: 'Colonnes',
+                saveBingo: '💾 Enregistrer .bingo',
+                loadBingo: '📂 Charger .bingo',
+                exportPng: '🖼️ Enregistrer PNG',
+                newBoard: '➕ Nouveau plateau',
+                boards: '📋 Plateaux',
+                title: 'Titre',
+                description: 'Description',
+                bingoType: 'Type de bingo',
+                types: {
+                    standard: 'Standard (ligne)',
+                    fullHouse: 'Full House',
+                    diagonal: 'Diagonale',
+                    doubleDiagonal: 'Double diagonale',
+                    vertical: 'Verticale',
+                    horizontal: 'Horizontale',
+                    cross: 'Croix (vert+horiz)'
+                },
+                cellText: 'Texte',
+                cellImage: 'Image',
+                cellCaption: 'Légende',
+                properties: '⚙️ Propriétés',
+                clickToSelect: 'Cliquez pour sélectionner',
+                darkTheme: '🌙 Sombre',
+                lightTheme: '☀️ Clair',
+                defaultCellText: '',
+                noBoard: 'Aucun plateau',
+                selectImage: 'Choisir',
+                bingoMessage: '🎉 BINGO ! 🎉',
+                characters: 'caractères',
+                ok: 'OK'
+            },
+            de: {
+                creator: '✏️ Ersteller',
+                player: '🎮 Spieler',
+                rows: 'Zeilen',
+                cols: 'Spalten',
+                saveBingo: '💾 .bingo speichern',
+                loadBingo: '📂 .bingo laden',
+                exportPng: '🖼️ PNG speichern',
+                newBoard: '➕ Neues Brett',
+                boards: '📋 Bretter',
+                title: 'Titel',
+                description: 'Beschreibung',
+                bingoType: 'Bingo-Typ',
+                types: {
+                    standard: 'Standard (Linie)',
+                    fullHouse: 'Full House',
+                    diagonal: 'Diagonale',
+                    doubleDiagonal: 'Doppelte Diagonale',
+                    vertical: 'Vertikal',
+                    horizontal: 'Horizontal',
+                    cross: 'Kreuz (vert+horiz)'
+                },
+                cellText: 'Text',
+                cellImage: 'Bild',
+                cellCaption: 'Bildunterschrift',
+                properties: '⚙️ Eigenschaften',
+                clickToSelect: 'Zum Auswählen klicken',
+                darkTheme: '🌙 Dunkel',
+                lightTheme: '☀️ Hell',
+                defaultCellText: '',
+                noBoard: 'Kein Brett',
+                selectImage: 'Auswählen',
+                bingoMessage: '🎉 BINGO! 🎉',
+                characters: 'Zeichen',
+                ok: 'OK'
+            },
+            zh: {
+                creator: '✏️ 创建者',
+                player: '🎮 玩家',
+                rows: '行数',
+                cols: '列数',
+                saveBingo: '💾 保存 .bingo',
+                loadBingo: '📂 加载 .bingo',
+                exportPng: '🖼️ 保存 PNG',
+                newBoard: '➕ 新建板子',
+                boards: '📋 板子列表',
+                title: '标题',
+                description: '描述',
+                bingoType: '宾果类型',
+                types: {
+                    standard: '标准 (连线)',
+                    fullHouse: '全满',
+                    diagonal: '对角线',
+                    doubleDiagonal: '双对角线',
+                    vertical: '垂直',
+                    horizontal: '水平',
+                    cross: '十字 (垂直+水平)'
+                },
+                cellText: '文本',
+                cellImage: '图片',
+                cellCaption: '说明',
+                properties: '⚙️ 单元格属性',
+                clickToSelect: '点击板子选择',
+                darkTheme: '🌙 深色',
+                lightTheme: '☀️ 浅色',
+                defaultCellText: '',
+                noBoard: '无活动板子',
+                selectImage: '选择',
+                bingoMessage: '🎉 宾果！ 🎉',
+                characters: '字符',
+                ok: '确定'
+            }
+        };
+
+        let currentLang = 'en';
+        let boards = [];
+        let activeBoardIndex = 0;
+        let currentMode = 'creator';
+        let selectedCellRow = -1, selectedCellCol = -1;
+        let currentTheme = 'dark';
+        let bingoMessageTimeout = null;
+
+        // DOM элементы
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        const langSelect = document.getElementById('lang-select');
+        const rowsInput = document.getElementById('rows-input');
+        const colsInput = document.getElementById('cols-input');
+        const saveBingoBtn = document.getElementById('save-bingo-btn');
+        const loadBtn = document.getElementById('load-bingo-input-btn');
+        const fileInput = document.getElementById('bingo-file-input');
+        const exportPngBtn = document.getElementById('export-png-btn');
+        const newBoardBtn = document.getElementById('new-board-btn');
+        const boardsListEl = document.getElementById('boards-list');
+        const container = document.getElementById('active-board-container');
+        const propertyPanel = document.getElementById('property-panel');
+        const cellTextInp = document.getElementById('cell-text');
+        const cellImageInp = document.getElementById('cell-image');
+        const cellCaptionInp = document.getElementById('cell-caption');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const selectImageBtn = document.getElementById('select-image-btn');
+        const clearImageBtn = document.getElementById('clear-image-btn');
+        const imageFileInput = document.getElementById('image-file-input');
+
+        function t(key) {
+            return i18n[currentLang]?.[key] || i18n.en[key] || key;
+        }
+
+        function tType(typeKey) {
+            return i18n[currentLang]?.types?.[typeKey] || i18n.en.types[typeKey] || typeKey;
+        }
+
+        function showModal(message) {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.innerHTML = `
+                <div class="modal-box">
+                    <p>${message}</p>
+                    <button class="btn" id="modal-ok-btn">${t('ok')}</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            const okBtn = overlay.querySelector('#modal-ok-btn');
+            okBtn.addEventListener('click', () => overlay.remove());
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+        }
+
+        function updateUILanguage() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const k = el.getAttribute('data-i18n');
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    el.placeholder = t(k);
+                } else {
+                    el.innerHTML = t(k);
+                }
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+            });
+            themeToggleBtn.innerHTML = currentTheme === 'dark' ? t('lightTheme') : t('darkTheme');
+            if (propertyPanel.style.display !== 'none') {
+                propertyPanel.querySelector('h4').innerHTML = t('properties');
+            }
+            const typeSelect = document.getElementById('bingo-type');
+            if (typeSelect) {
+                const types = ['standard','fullHouse','diagonal','doubleDiagonal','vertical','horizontal','cross'];
+                Array.from(typeSelect.options).forEach((opt, idx) => {
+                    if (types[idx]) opt.text = tType(types[idx]);
+                });
+            }
+            renderActiveBoard();
+        }
+
+        function setTheme(theme) {
+            currentTheme = theme;
+            document.body.className = theme;
+            themeToggleBtn.innerHTML = theme === 'dark' ? t('lightTheme') : t('darkTheme');
+            renderActiveBoard();
+        }
+
+        themeToggleBtn.addEventListener('click', () => setTheme(currentTheme === 'dark' ? 'light' : 'dark'));
+
+        function checkBingo(board) {
+            if (currentMode !== 'player') return false;
+            const { rows, cols, cells, bingoType } = board;
+            
+            switch (bingoType) {
+                case 'standard': {
+                    for (let r=0; r<rows; r++) {
+                        if (Array(cols).fill().every((_,c) => cells[r][c].completed)) return true;
+                    }
+                    for (let c=0; c<cols; c++) {
+                        if (Array(rows).fill().every((_,r) => cells[r][c].completed)) return true;
+                    }
+                    return false;
+                }
+                case 'fullHouse':
+                    return cells.every(row => row.every(cell => cell.completed));
+                case 'diagonal':
+                    if (rows !== cols) return false;
+                    return Array(rows).fill().every((_,i) => cells[i][i].completed);
+                case 'doubleDiagonal':
+                    if (rows !== cols) return false;
+                    return Array(rows).fill().every((_,i) => cells[i][i].completed) &&
+                           Array(rows).fill().every((_,i) => cells[i][cols-1-i].completed);
+                case 'vertical':
+                    return Array(cols).fill().some((_,c) => Array(rows).fill().every((_,r) => cells[r][c].completed));
+                case 'horizontal':
+                    return Array(rows).fill().some((_,r) => Array(cols).fill().every((_,c) => cells[r][c].completed));
+                case 'cross': {
+                    if (rows < 2 || cols < 2) return false;
+                    const midRow = Math.floor(rows/2);
+                    const midCol = Math.floor(cols/2);
+                    const rowComplete = Array(cols).fill().every((_,c) => cells[midRow][c].completed);
+                    const colComplete = Array(rows).fill().every((_,r) => cells[r][midCol].completed);
+                    return rowComplete && colComplete;
+                }
+                default: return false;
+            }
+        }
+
+        function showBingoMessage() {
+            if (bingoMessageTimeout) clearTimeout(bingoMessageTimeout);
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'bingo-message';
+            msgDiv.textContent = t('bingoMessage');
+            document.body.appendChild(msgDiv);
+            bingoMessageTimeout = setTimeout(() => msgDiv.remove(), 2000);
+        }
+
+        function createDefaultBoard() {
+            const rows = parseInt(rowsInput.value) || 3;
+            const cols = parseInt(colsInput.value) || 3;
+            return {
+                title: t('title') + ' 1',
+                description: '',
+                bingoType: 'standard',
+                rows: rows,
+                cols: cols,
+                cells: Array(rows).fill().map(() => Array(cols).fill().map(() => ({
+                    text: '',
+                    imageUrl: '',
+                    caption: '',
+                    completed: false
+                })))
+            };
+        }
+
+        function initBoards() {
+            if (boards.length === 0) {
+                boards.push(createDefaultBoard());
+                activeBoardIndex = 0;
+            }
+            renderBoardsList();
+            renderActiveBoard();
+            updateSizeInputs();
+        }
+
+        function renderBoardsList() {
+            boardsListEl.innerHTML = '';
+            boards.forEach((board, idx) => {
+                const li = document.createElement('li');
+                li.className = `board-item ${idx === activeBoardIndex ? 'active' : ''}`;
+                li.innerHTML = `
+                    <span style="flex:1;" data-board-index="${idx}">${escapeHtml(board.title) || t('noBoard')}</span>
+                    <div class="board-item-actions">
+                        <button data-delete-index="${idx}" title="Delete">🗑️</button>
+                    </div>
+                `;
+                li.querySelector('span').addEventListener('click', () => {
+                    activeBoardIndex = idx;
+                    renderBoardsList();
+                    renderActiveBoard();
+                    updateSizeInputs();
+                    selectedCellRow = selectedCellCol = -1;
+                    propertyPanel.style.display = 'none';
+                });
+                li.querySelector('button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (boards.length <= 1) {
+                        showModal(t('noBoard'));
+                        return;
+                    }
+                    boards.splice(idx, 1);
+                    if (activeBoardIndex >= boards.length) activeBoardIndex = boards.length-1;
+                    renderBoardsList();
+                    renderActiveBoard();
+                    updateSizeInputs();
+                });
+                boardsListEl.appendChild(li);
+            });
+        }
+
+        function getActiveBoard() {
+            return boards[activeBoardIndex];
+        }
+
+        function updateSizeInputs() {
+            const board = getActiveBoard();
+            if (board) {
+                rowsInput.value = board.rows;
+                colsInput.value = board.cols;
+            }
+            // Блокировка в режиме пользователя
+            rowsInput.disabled = (currentMode === 'player');
+            colsInput.disabled = (currentMode === 'player');
+        }
+
+        function renderActiveBoard() {
+            const board = getActiveBoard();
+            if (!board) return;
+            const { title, description, bingoType, rows, cols, cells } = board;
+            const readonlyAttr = currentMode === 'player' ? 'readonly disabled' : '';
+
+            let html = `
+                <div class="board-meta">
+                    <input type="text" id="board-title" placeholder="${t('title')}" value="${escapeHtml(title)}" ${readonlyAttr} />
+                    <div style="width:100%;">
+                        <textarea id="board-desc" placeholder="${t('description')}" maxlength="100" ${readonlyAttr}>${escapeHtml(description)}</textarea>
+                        <div class="char-counter" id="desc-char-counter" style="font-size:12px; color: var(--text-secondary); text-align:right;">${description.length}/100 ${t('characters')}</div>
+                    </div>
+            `;
+            if (currentMode === 'creator') {
+                html += `<div class="bingo-type-selector">
+                    <label>${t('bingoType')}:</label>
+                    <select id="bingo-type">
+                        <option value="standard" ${bingoType==='standard'?'selected':''}>${tType('standard')}</option>
+                        <option value="fullHouse" ${bingoType==='fullHouse'?'selected':''}>${tType('fullHouse')}</option>
+                        <option value="diagonal" ${bingoType==='diagonal'?'selected':''}>${tType('diagonal')}</option>
+                        <option value="doubleDiagonal" ${bingoType==='doubleDiagonal'?'selected':''}>${tType('doubleDiagonal')}</option>
+                        <option value="vertical" ${bingoType==='vertical'?'selected':''}>${tType('vertical')}</option>
+                        <option value="horizontal" ${bingoType==='horizontal'?'selected':''}>${tType('horizontal')}</option>
+                        <option value="cross" ${bingoType==='cross'?'selected':''}>${tType('cross')}</option>
+                    </select>
+                </div>`;
+            } else {
+                html += `<div class="bingo-type-selector"><strong>${t('bingoType')}:</strong> ${tType(bingoType || 'standard')}</div>`;
+            }
+            html += `</div>`;
+
+            html += `<div class="bingo-grid" id="bingo-grid" style="grid-template-columns: repeat(${cols}, var(--cell-size));">`;
+            for (let r=0; r<rows; r++) {
+                for (let c=0; c<cols; c++) {
+                    const cell = cells[r]?.[c] || { text:'', imageUrl:'', caption:'', completed:false };
+                    const completedClass = (currentMode === 'player' && cell.completed) ? 'completed' : '';
+                    const selectedClass = (currentMode === 'creator' && selectedCellRow === r && selectedCellCol === c) ? 'selected-creator' : '';
+                    html += `<div class="bingo-cell ${completedClass} ${selectedClass}" data-row="${r}" data-col="${c}">`;
+                    html += `<div class="cell-content">`;
+                    if (cell.imageUrl) {
+                        html += `<img src="${escapeHtml(cell.imageUrl)}" class="cell-image" alt="img">`;
+                    }
+                    if (cell.text) {
+                        html += `<div class="cell-text">${escapeHtml(cell.text)}</div>`;
+                    }
+                    if (cell.caption) {
+                        html += `<div class="cell-caption">${escapeHtml(cell.caption)}</div>`;
+                    }
+                    if (!cell.imageUrl && !cell.text && !cell.caption) {
+                        html += `<div class="cell-text">💡</div>`;
+                    }
+                    html += `</div></div>`;
+                }
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+
+            document.querySelectorAll('.bingo-cell').forEach(cellDiv => {
+                cellDiv.addEventListener('click', (e) => {
+                    const row = parseInt(cellDiv.dataset.row);
+                    const col = parseInt(cellDiv.dataset.col);
+                    handleCellClick(row, col);
+                });
+            });
+
+            const titleInp = document.getElementById('board-title');
+            const descInp = document.getElementById('board-desc');
+            const charCounter = document.getElementById('desc-char-counter');
+            
+            if (titleInp && currentMode === 'creator') {
+                titleInp.addEventListener('input', (e) => { board.title = e.target.value; renderBoardsList(); });
+            }
+            if (descInp && currentMode === 'creator') {
+                descInp.addEventListener('input', (e) => {
+                    board.description = e.target.value;
+                    if (charCounter) charCounter.textContent = `${e.target.value.length}/100 ${t('characters')}`;
+                });
+            }
+            const typeSelect = document.getElementById('bingo-type');
+            if (typeSelect && currentMode === 'creator') {
+                typeSelect.addEventListener('change', (e) => { board.bingoType = e.target.value; });
+            }
+
+            if (currentMode === 'player') {
+                propertyPanel.style.display = 'none';
+                selectedCellRow = selectedCellCol = -1;
+            } else {
+                propertyPanel.style.display = (selectedCellRow !== -1) ? 'block' : 'none';
+                if (selectedCellRow !== -1) {
+                    const cell = board.cells[selectedCellRow][selectedCellCol];
+                    cellTextInp.value = cell.text || '';
+                    cellImageInp.value = cell.imageUrl || '';
+                    cellCaptionInp.value = cell.caption || '';
+                }
+            }
+        }
+
+        function handleCellClick(row, col) {
+            const board = getActiveBoard();
+            if (currentMode === 'player') {
+                const cell = board.cells[row][col];
+                cell.completed = !cell.completed;
+                renderActiveBoard();
+                if (checkBingo(board)) showBingoMessage();
+            } else {
+                selectedCellRow = row;
+                selectedCellCol = col;
+                const cell = board.cells[row][col];
+                cellTextInp.value = cell.text || '';
+                cellImageInp.value = cell.imageUrl || '';
+                cellCaptionInp.value = cell.caption || '';
+                propertyPanel.style.display = 'block';
+                renderActiveBoard();
+            }
+        }
+
+        function updateCellProperty(field, value) {
+            if (selectedCellRow === -1) return;
+            const board = getActiveBoard();
+            const cell = board.cells[selectedCellRow][selectedCellCol];
+            cell[field] = value;
+            renderActiveBoard();
+            selectedCellRow = selectedCellRow; 
+            selectedCellCol = selectedCellCol;
+            propertyPanel.style.display = 'block';
+        }
+
+        cellTextInp.addEventListener('input', (e) => updateCellProperty('text', e.target.value));
+        cellImageInp.addEventListener('input', (e) => updateCellProperty('imageUrl', e.target.value));
+        cellCaptionInp.addEventListener('input', (e) => updateCellProperty('caption', e.target.value));
+
+        clearImageBtn.addEventListener('click', () => {
+            cellImageInp.value = '';
+            updateCellProperty('imageUrl', '');
+        });
+
+        selectImageBtn.addEventListener('click', () => imageFileInput.click());
+        imageFileInput.addEventListener('change', (e) => {
+            const file = imageFileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    cellImageInp.value = ev.target.result;
+                    updateCellProperty('imageUrl', ev.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+            imageFileInput.value = '';
+        });
+
+        function resizeGridFromInputs() {
+            if (currentMode === 'player') return;
+            const newRows = parseInt(rowsInput.value) || 3;
+            const newCols = parseInt(colsInput.value) || 3;
+            const board = getActiveBoard();
+            if (!board) return;
+            const oldRows = board.rows;
+            const oldCols = board.cols;
+            
+            const newCells = Array(newRows).fill().map((_, r) => Array(newCols).fill().map((_, c) => {
+                if (r < oldRows && c < oldCols && board.cells[r]?.[c]) {
+                    return { ...board.cells[r][c] };
+                } else {
+                    return { text: '', imageUrl: '', caption: '', completed: false };
+                }
+            }));
+            
+            board.rows = newRows;
+            board.cols = newCols;
+            board.cells = newCells;
+            selectedCellRow = selectedCellCol = -1;
+            propertyPanel.style.display = 'none';
+            renderActiveBoard();
+            renderBoardsList();
+        }
+
+        rowsInput.addEventListener('input', resizeGridFromInputs);
+        colsInput.addEventListener('input', resizeGridFromInputs);
+
+        function exportPNG() {
+            const grid = document.getElementById('bingo-grid');
+            if (!grid) return;
+            html2canvas(grid, { scale: 2, backgroundColor: null }).then(canvas => {
+                canvas.toBlob(blob => saveAs(blob, `bingo_${Date.now()}.png`));
+            });
+        }
+
+        function saveBingoFile() {
+            const board = getActiveBoard();
+            const data = { version: 1, ...board };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            saveAs(blob, `${board.title || 'bingo'}.bingo`);
+        }
+
+        function loadBingoFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const loaded = JSON.parse(e.target.result);
+                    const newBoard = {
+                        title: loaded.title || t('title'),
+                        description: loaded.description || '',
+                        bingoType: loaded.bingoType || 'standard',
+                        rows: loaded.rows || 3,
+                        cols: loaded.cols || 3,
+                        cells: loaded.cells || []
+                    };
+                    boards.push(newBoard);
+                    activeBoardIndex = boards.length - 1;
+                    renderBoardsList();
+                    renderActiveBoard();
+                    updateSizeInputs();
+                } catch (err) {
+                    alert('Invalid file');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function addNewBoard() {
+            boards.push(createDefaultBoard());
+            activeBoardIndex = boards.length - 1;
+            updateSizeInputs();
+            renderBoardsList();
+            renderActiveBoard();
+            selectedCellRow = selectedCellCol = -1;
+            propertyPanel.style.display = 'none';
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            modeBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+            selectedCellRow = selectedCellCol = -1;
+            propertyPanel.style.display = 'none';
+            // Блокировка инпутов размеров
+            rowsInput.disabled = (mode === 'player');
+            colsInput.disabled = (mode === 'player');
+            renderActiveBoard();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return text;
+            return String(text).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+        }
+
+        saveBingoBtn.addEventListener('click', saveBingoFile);
+        loadBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (fileInput.files[0]) loadBingoFile(fileInput.files[0]);
+            fileInput.value = '';
+        });
+        exportPngBtn.addEventListener('click', exportPNG);
+        newBoardBtn.addEventListener('click', addNewBoard);
+        modeBtns.forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+        langSelect.addEventListener('change', (e) => {
+            currentLang = e.target.value;
+            updateUILanguage();
+            renderActiveBoard();
+        });
+
+        initBoards();
+        updateUILanguage();
+        setTheme('dark');
+    })();
+</script>
+</body>
+</html>
