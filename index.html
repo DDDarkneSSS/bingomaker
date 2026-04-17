@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Bingo Constructor</title>
+    <title>Bingo Constructor · Multi‑Card · Color</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
-        /* ---------- CSS Variables (Dark Theme default) ---------- */
+        /* ---------- CSS Variables (Dark default) ---------- */
         :root {
             --bg-body: #1a1f2b;
             --bg-header: #252c3b;
@@ -16,8 +16,6 @@
             --text-secondary: #a0aec0;
             --bg-sidebar: #1e2533;
             --bg-board-bg: #2d3748;
-            --cell-bg-light: #ffffff;
-            --cell-bg-dark: #2a3446;
             --cell-shadow: rgba(0,0,0,0.05);
             --btn-primary-bg: #3b82f6;
             --btn-primary-text: white;
@@ -30,9 +28,6 @@
             --mode-switch-bg: #2d3748;
             --input-border: #4a5568;
             --selected-outline: #f59e0b;
-            --cell-text-color-light: #1e293b;
-            --cell-text-color-dark: #f1f5f9;
-            --cell-size: 120px;
         }
 
         body.light {
@@ -43,11 +38,7 @@
             --text-secondary: #475569;
             --bg-sidebar: #ffffff;
             --bg-board-bg: #d9e2ec;
-            --cell-bg-light: #ffffff;
-            --cell-bg-dark: #2a3446;
-            --cell-shadow: rgba(0,0,0,0.05);
             --btn-primary-bg: #1e88e5;
-            --btn-primary-text: white;
             --btn-outline-bg: white;
             --btn-outline-text: #1e3a5f;
             --btn-outline-border: #b0c8dd;
@@ -73,6 +64,7 @@
             display: flex;
             flex-direction: column;
             transition: background 0.2s, color 0.2s;
+			overflow-x: hidden;
         }
 
         .app-header {
@@ -120,28 +112,6 @@
             cursor: pointer;
         }
 
-        .board-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .board-controls input {
-            width: 70px;
-            padding: 8px;
-            border-radius: 20px;
-            border: 1px solid var(--input-border);
-            background: var(--bg-header);
-            color: var(--text-primary);
-            text-align: center;
-        }
-
-        .board-controls input:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
         .btn {
             padding: 8px 18px;
             border-radius: 30px;
@@ -166,10 +136,6 @@
             filter: brightness(1.1);
         }
 
-        .btn-outline:hover {
-            background: var(--mode-switch-bg);
-        }
-
         .app-container {
             display: flex;
             flex: 1;
@@ -188,84 +154,141 @@
         .main-area {
             flex: 1;
             padding: 20px;
-            overflow: auto;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
         }
 
-        .board-meta {
-            margin-bottom: 20px;
+        .cards-container {
+            display: flex;
+            gap: 24px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            scroll-behavior: smooth;
+            flex: 1;
+        }
+
+        .card-wrapper {
+            flex: 0 0 auto;
+            border-radius: 24px;
+            padding: 18px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            max-width: 400px;
+            border: 1px solid var(--border-light);
+            transition: box-shadow 0.2s;
         }
 
-        .board-meta input, .board-meta textarea, .board-meta select {
-            padding: 10px 15px;
-            border-radius: 20px;
-            border: 1px solid var(--input-border);
-            background: var(--bg-header);
-            color: var(--text-primary);
-            font-size: 14px;
-            width: 100%;
+        /* Активная карточка — обводка изнутри */
+        .card-wrapper.active-card {
+            box-shadow: inset 0 0 0 3px var(--selected-outline), 0 6px 16px rgba(0,0,0,0.1);
         }
 
-        .board-meta input {
-            height: 44px;
-        }
-
-        .board-meta textarea {
-            min-height: 80px;
-            height: 80px;
-            resize: none;
-        }
-
-        .bingo-type-selector {
+        .card-header {
             display: flex;
             align-items: center;
-            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .card-title-input {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid currentColor;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+            color: inherit;
             width: 100%;
         }
 
-        .bingo-type-selector select {
-            flex: 1;
+        .card-meta-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+
+        .card-meta-row select, .card-meta-row input {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid currentColor;
+            color: inherit;
+            padding: 4px 8px;
+            border-radius: 16px;
+        }
+
+        /* Кастомный select — стрелка через CSS-класс */
+        .card-meta-row select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 14px;
+            padding-right: 32px !important;
+            cursor: pointer;
+        }
+
+        .card-wrapper.light-text .card-meta-row select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        }
+
+        .card-wrapper.dark-text .card-meta-row select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        }
+
+        .card-wrapper.light-text .card-meta-row select option {
+            background: var(--card-bg, #ffffff);
+            color: #000000;
+        }
+
+        .card-wrapper.dark-text .card-meta-row select option {
+            background: var(--card-bg, #1f2a3a);
+            color: #ffffff;
+        }
+
+        .color-swatch {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: 1px solid currentColor;
+            cursor: pointer;
+            background: var(--swatch-color, #3a4a5e);
+            flex-shrink: 0;
+        }
+
+        .hidden-color-input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
         .bingo-grid {
             display: grid;
             gap: 6px;
-            background: var(--bg-board-bg);
-            padding: 12px;
-            border-radius: 24px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 20px;
+            margin: 10px 0;
             width: fit-content;
         }
 
         .bingo-cell {
-            background: var(--cell-bg-dark);
             border-radius: 12px;
             box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 2px 4px var(--cell-shadow);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 6px 4px;
+            padding: 4px;
             transition: 0.15s;
             cursor: pointer;
             user-select: none;
             position: relative;
-            width: var(--cell-size);
-            height: var(--cell-size);
+            width: var(--cell-size, 100px);
+            height: var(--cell-size, 100px);
             overflow: hidden;
-            color: var(--cell-text-color-dark);
-            flex-shrink: 0;
-        }
-
-        body.light .bingo-cell {
-            background: var(--cell-bg-light);
-            color: var(--cell-text-color-light);
+            color: inherit;
         }
 
         .bingo-cell.completed {
@@ -300,24 +323,24 @@
         }
 
         .cell-text {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             text-align: center;
             word-break: break-word;
             display: -webkit-box;
-            -webkit-line-clamp: 4;
+            -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
             line-height: 1.3;
-            max-height: 5.2em;
+            max-height: calc(1.3em * 3);
+            width: 100%;
             padding: 0 2px;
         }
 
         .cell-caption {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
+            font-size: 11px;
+            opacity: 0.8;
             text-align: center;
             word-break: break-word;
             display: -webkit-box;
@@ -325,67 +348,79 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-height: 2.6em;
             line-height: 1.3;
+            max-height: calc(1.3em * 2);
+            width: 100%;
+            padding: 0 2px;
+            margin-top: 2px;
+        }
+
+        .card-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+            justify-content: center;
+        }
+
+        .card-actions .btn {
+            font-size: 12px;
+            padding: 6px 12px;
         }
 
         .property-panel {
             background: var(--panel-bg);
             padding: 20px;
             border-radius: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             margin-top: 20px;
             max-width: 500px;
             color: var(--text-primary);
         }
 
-        .property-panel input, .property-panel textarea {
-            background: var(--bg-header);
-            border: 1px solid var(--input-border);
-            border-radius: 16px;
-            padding: 10px 14px;
-            color: var(--text-primary);
-            font-size: 14px;
-            width: 100%;
-            transition: border 0.2s, box-shadow 0.2s;
+        .property-panel h4 {
+            margin-bottom: 16px;
+            font-size: 18px;
         }
 
-        .property-panel input:focus, .property-panel textarea:focus {
-            border-color: var(--btn-primary-bg);
-            box-shadow: 0 0 0 3px rgba(30,136,229,0.2);
-            outline: none;
+        .property-panel input,
+        .property-panel textarea,
+        .property-panel .btn-outline {
+            background: var(--bg-header);
+            border: 1px solid var(--input-border);
+            color: var(--text-primary);
+            border-radius: 30px;
+            padding: 10px 16px;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .property-panel .btn-outline {
+            width: auto;
+            padding: 8px 16px;
+            background: var(--btn-outline-bg);
+            color: var(--btn-outline-text);
+            border: 1px solid var(--btn-outline-border);
         }
 
         .boards-list {
             list-style: none;
-            padding: 0;
-            margin: 0;
         }
 
         .board-item {
-            padding: 12px 12px;
+            padding: 12px;
             margin-bottom: 8px;
             background: var(--board-item-bg);
             border-radius: 16px;
             cursor: pointer;
             border-left: 5px solid transparent;
-            transition: 0.1s;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: var(--text-primary);
-        }
-
-        .board-item span {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .board-item.active {
             border-left-color: var(--btn-primary-bg);
             background: var(--board-item-active-bg);
-            font-weight: 600;
         }
 
         .board-item-actions button {
@@ -395,6 +430,30 @@
             cursor: pointer;
             opacity: 0.6;
             color: var(--text-primary);
+            padding: 0 4px;
+        }
+
+        .bingo-message-local {
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            text-align: center;
+            margin: 8px 0 0;
+            animation: fadeLocal 1.5s forwards;
+        }
+
+        @keyframes fadeLocal {
+            0% { opacity: 0; transform: scale(0.9); }
+            20% { opacity: 1; transform: scale(1); }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .add-card-btn {
+            align-self: flex-start;
+            margin-left: 8px;
         }
 
         .flex-row {
@@ -404,87 +463,49 @@
             align-items: center;
         }
 
-        input, textarea, select {
-            outline: none;
+        .dimension-control {
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .theme-toggle {
-            margin-left: auto;
+        .dimension-control input {
+            width: 60px;
+            text-align: center;
         }
-        
-        .image-upload-wrap {
+
+        .property-panel .image-upload-wrap {
             display: flex;
             gap: 8px;
-            align-items: center;
             width: 100%;
         }
 
-        .image-upload-wrap input[type="text"] {
+        .property-panel .image-upload-wrap input {
             flex: 1;
         }
 
-        .btn-icon {
-            padding: 8px 12px;
-            border-radius: 30px;
-        }
-
-        .bingo-message, .modal-message {
-            position: fixed;
-            top: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--btn-primary-bg);
-            color: white;
-            padding: 12px 30px;
-            border-radius: 60px;
+        .group-title-input {
+            font-size: 1.5em;
             font-weight: bold;
-            font-size: 18px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-            z-index: 9999;
-            animation: fadeInOut 2s ease forwards;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-        }
-
-        .modal-box {
-            background: var(--panel-bg);
-            padding: 24px;
-            border-radius: 32px;
-            max-width: 320px;
-            text-align: center;
+            background: transparent;
+            border: 1px solid var(--input-border);
             color: var(--text-primary);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
-        }
-
-        .modal-box p {
-            margin: 16px 0;
-        }
-
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateX(-50%) scale(0.8); }
-            15% { opacity: 1; transform: translateX(-50%) scale(1); }
-            80% { opacity: 1; }
-            100% { opacity: 0; transform: translateX(-50%) scale(0.8); }
+            padding: 4px 8px;
+            border-radius: 16px;
+            width: auto;
+            min-width: 200px;
         }
     </style>
 </head>
-<body class="dark"> <!-- по умолчанию тёмная тема -->
+<body class="dark">
 <div class="app-header">
     <div class="mode-switch">
-        <button class="mode-btn active" data-mode="creator" data-i18n="creator">✏️ Creator</button>
-        <button class="mode-btn" data-mode="player" data-i18n="player">🎮 Player</button>
+        <button class="mode-btn active" data-mode="creator">✏️ Creator</button>
+        <button class="mode-btn" data-mode="player">🎮 Player</button>
     </div>
     <div class="lang-selector">
         <select id="lang-select">
-            <option value="en" selected>🇺🇸 US (English)</option>
+            <option value="en" selected>🇺🇸 English</option>
             <option value="ru">🇷🇺 Русский</option>
             <option value="es">🇪🇸 Español</option>
             <option value="fr">🇫🇷 Français</option>
@@ -492,16 +513,10 @@
             <option value="zh">🇨🇳 中文</option>
         </select>
     </div>
-    <div class="board-controls">
-        <input type="number" id="rows-input" min="1" max="8" value="3" data-i18n-placeholder="rows">
-        <span>✕</span>
-        <input type="number" id="cols-input" min="1" max="8" value="3" data-i18n-placeholder="cols">
-    </div>
     <div class="flex-row">
-        <button class="btn-outline btn" id="save-bingo-btn" data-i18n="saveBingo">💾 Save .bingo</button>
-        <button class="btn-outline btn" id="load-bingo-input-btn" data-i18n="loadBingo">📂 Load .bingo</button>
-        <input type="file" id="bingo-file-input" accept=".bingo,application/json" style="display:none;">
-        <button class="btn" id="export-png-btn" data-i18n="exportPng">🖼️ Save PNG</button>
+        <button class="btn-outline btn" id="save-group-btn">💾 Save Group</button>
+        <button class="btn-outline btn" id="load-group-btn">📂 Load Group</button>
+        <input type="file" id="group-file-input" accept=".bingo,application/json" style="display:none;">
     </div>
     <div class="theme-toggle">
         <button id="theme-toggle-btn" class="btn-outline">☀️ Light</button>
@@ -510,34 +525,36 @@
 
 <div class="app-container">
     <div class="boards-sidebar">
-        <h3 style="margin-top:0;" data-i18n="boards">📋 Boards</h3>
-        <button class="btn-outline btn" id="new-board-btn" style="width:100%; margin-bottom:15px;" data-i18n="newBoard">➕ New Board</button>
+        <h3>📋 Groups</h3>
+        <button class="btn-outline btn" id="new-board-btn" style="width:100%; margin-bottom:15px;">➕ New Group</button>
         <ul class="boards-list" id="boards-list"></ul>
-        <p style="font-size:13px; color: var(--text-secondary);" data-i18n="clickToSelect">Click board to select</p>
+        <p style="font-size:13px; color: var(--text-secondary);">Click group to select</p>
     </div>
 
     <div class="main-area">
-        <div id="active-board-container"></div>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+            <input type="text" id="group-title-input" class="group-title-input" value="Group 1" placeholder="Group name" readonly>
+            <button class="btn-outline btn add-card-btn" id="add-card-btn" style="display: none;">➕ Add Card</button>
+        </div>
+        <div class="cards-container" id="cards-container"></div>
         <div id="property-panel" class="property-panel" style="display: none;">
-            <h4 data-i18n="properties">⚙️ Cell Properties</h4>
+            <h4>⚙️ Cell Properties</h4>
             <div class="flex-row">
-                <label style="width:100%;"><span data-i18n="cellText">Text</span><br>
-                    <input type="text" id="cell-text" placeholder="">
-                </label>
+                <label style="width:100%;"><span data-i18n="textLabel">Text</span></label>
+                <input type="text" id="cell-text" data-i18n-placeholder="textPlaceholder" placeholder="Enter text">
             </div>
             <div class="flex-row">
-                <label style="width:100%;"><span data-i18n="cellImage">Image</span></label>
+                <label style="width:100%;"><span data-i18n="imageLabel">Image</span></label>
                 <div class="image-upload-wrap">
-                    <input type="text" id="cell-image" placeholder="URL or select file">
-                    <button type="button" class="btn-outline btn-icon" id="select-image-btn" title="Select image">📁</button>
-                    <button type="button" class="btn-outline btn-icon" id="clear-image-btn" title="Clear image">🗑️</button>
+                    <input type="text" id="cell-image" data-i18n-placeholder="imagePlaceholder" placeholder="URL or select file">
+                    <button type="button" class="btn-outline" id="select-image-btn">📁</button>
+                    <button type="button" class="btn-outline" id="clear-image-btn">🗑️</button>
                     <input type="file" id="image-file-input" accept="image/*" style="display:none;">
                 </div>
             </div>
             <div class="flex-row">
-                <label style="width:100%;"><span data-i18n="cellCaption">Caption</span><br>
-                    <input type="text" id="cell-caption" placeholder="">
-                </label>
+                <label style="width:100%;"><span data-i18n="captionLabel">Caption</span></label>
+                <input type="text" id="cell-caption" data-i18n-placeholder="captionPlaceholder" placeholder="Enter caption">
             </div>
         </div>
     </div>
@@ -547,711 +564,593 @@
     (function(){
         "use strict";
 
-        // Предотвращение ошибок dragEvent
-        window.addEventListener('drag', (e) => e.preventDefault());
-        window.addEventListener('drop', (e) => e.preventDefault());
-        document.addEventListener('dragover', (e) => e.preventDefault());
-        document.addEventListener('drop', (e) => e.preventDefault());
-
-        // Локализация (без textHint)
+        // ---------- Переводы ----------
         const i18n = {
             en: {
-                creator: '✏️ Creator',
-                player: '🎮 Player',
-                rows: 'Rows',
-                cols: 'Columns',
-                saveBingo: '💾 Save .bingo',
-                loadBingo: '📂 Load .bingo',
-                exportPng: '🖼️ Save PNG',
-                newBoard: '➕ New Board',
-                boards: '📋 Boards',
-                title: 'Title',
-                description: 'Description',
-                bingoType: 'Bingo type',
-                types: {
-                    standard: 'Standard (line)',
-                    fullHouse: 'Full House',
-                    diagonal: 'Diagonal',
-                    doubleDiagonal: 'Double Diagonal',
-                    vertical: 'Vertical',
-                    horizontal: 'Horizontal',
-                    cross: 'Cross (vertical+horizontal)'
-                },
-                cellText: 'Text',
-                cellImage: 'Image',
-                cellCaption: 'Caption',
-                properties: '⚙️ Cell Properties',
-                clickToSelect: 'Click board to select',
-                darkTheme: '🌙 Dark',
-                lightTheme: '☀️ Light',
-                defaultCellText: '',
-                noBoard: 'No active board',
-                selectImage: 'Select image',
-                bingoMessage: '🎉 BINGO! 🎉',
-                characters: 'characters',
-                ok: 'OK'
+                creator: '✏️ Creator', player: '🎮 Player',
+                saveGroup: '💾 Save Group', loadGroup: '📂 Load Group',
+                newGroup: '➕ New Group', addCard: '➕ Add Card',
+                title: 'Title', bingoType: 'Bingo type', cellSize: 'Cell size', bgColor: 'BG Color',
+                resetColor: 'Reset', saveCard: '💾 Save card', loadCard: '📂 Load card',
+                pngCard: '🖼️ PNG', deleteCard: '🗑️ Delete',
+                properties: '⚙️ Cell Properties', bingoMsg: '🎉 BINGO! 🎉',
+                group: 'Group', cannotDeleteOnlyCard: 'Cannot delete the only card',
+                rows: 'Rows', cols: 'Cols', apply: 'Apply',
+                types: { standard: 'Standard', fullHouse: 'Full House', diagonal: 'Diagonal', doubleDiagonal: 'Double Diagonal', vertical: 'Vertical', horizontal: 'Horizontal', cross: 'Cross' },
+                clickToSelect: 'Click group to select',
+                lightTheme: '☀️ Light', darkTheme: '🌙 Dark',
+                textLabel: 'Text', textPlaceholder: 'Enter text',
+                imageLabel: 'Image', imagePlaceholder: 'URL or select file',
+                captionLabel: 'Caption', captionPlaceholder: 'Enter caption',
+                groupNamePlaceholder: 'Group name'
             },
             ru: {
-                creator: '✏️ Создатель',
-                player: '🎮 Пользователь',
-                rows: 'Ряды',
-                cols: 'Столбцы',
-                saveBingo: '💾 Сохранить .bingo',
-                loadBingo: '📂 Загрузить .bingo',
-                exportPng: '🖼️ Сохранить PNG',
-                newBoard: '➕ Новая доска',
-                boards: '📋 Доски',
-                title: 'Название',
-                description: 'Описание',
-                bingoType: 'Тип бинго',
-                types: {
-                    standard: 'Обычное (линия)',
-                    fullHouse: 'Фулл-хаус',
-                    diagonal: 'Диагональ',
-                    doubleDiagonal: 'Две диагонали',
-                    vertical: 'Вертикаль',
-                    horizontal: 'Горизонталь',
-                    cross: 'Крест (верт+гориз)'
-                },
-                cellText: 'Текст',
-                cellImage: 'Изображение',
-                cellCaption: 'Подпись',
-                properties: '⚙️ Свойства ячейки',
-                clickToSelect: 'Нажмите на доску для выбора',
-                darkTheme: '🌙 Тёмная',
-                lightTheme: '☀️ Светлая',
-                defaultCellText: '',
-                noBoard: 'Нет активной доски',
-                selectImage: 'Выбрать',
-                bingoMessage: '🎉 БИНГО! 🎉',
-                characters: 'символов',
-                ok: 'ОК'
+                creator: '✏️ Создатель', player: '🎮 Игрок',
+                saveGroup: '💾 Сохранить группу', loadGroup: '📂 Загрузить группу',
+                newGroup: '➕ Новая группа', addCard: '➕ Добавить карточку',
+                title: 'Название', bingoType: 'Тип бинго', cellSize: 'Размер ячейки', bgColor: 'Цвет фона',
+                resetColor: 'Сброс', saveCard: '💾 Сохранить', loadCard: '📂 Загрузить',
+                pngCard: '🖼️ PNG', deleteCard: '🗑️ Удалить',
+                properties: '⚙️ Свойства ячейки', bingoMsg: '🎉 БИНГО! 🎉',
+                group: 'Группа', cannotDeleteOnlyCard: 'Нельзя удалить единственную карточку',
+                rows: 'Ряды', cols: 'Столбцы', apply: 'Применить',
+                types: { standard: 'Стандарт', fullHouse: 'Фулл Хаус', diagonal: 'Diagonal', doubleDiagonal: 'Double Diagonal', vertical: 'Vertical', horizontal: 'Horizontal', cross: 'Cross' },
+                clickToSelect: 'Нажмите на группу для выбора',
+                lightTheme: '☀️ Светлая', darkTheme: '🌙 Тёмная',
+                textLabel: 'Текст', textPlaceholder: 'Введите текст',
+                imageLabel: 'Изображение', imagePlaceholder: 'URL или выберите файл',
+                captionLabel: 'Подпись', captionPlaceholder: 'Введите подпись',
+                groupNamePlaceholder: 'Название группы'
             },
             es: {
-                creator: '✏️ Creador',
-                player: '🎮 Jugador',
-                rows: 'Filas',
-                cols: 'Columnas',
-                saveBingo: '💾 Guardar .bingo',
-                loadBingo: '📂 Cargar .bingo',
-                exportPng: '🖼️ Guardar PNG',
-                newBoard: '➕ Nuevo tablero',
-                boards: '📋 Tableros',
-                title: 'Título',
-                description: 'Descripción',
-                bingoType: 'Tipo de bingo',
-                types: {
-                    standard: 'Estándar (línea)',
-                    fullHouse: 'Casa llena',
-                    diagonal: 'Diagonal',
-                    doubleDiagonal: 'Doble diagonal',
-                    vertical: 'Vertical',
-                    horizontal: 'Horizontal',
-                    cross: 'Cruz (vert+horiz)'
-                },
-                cellText: 'Texto',
-                cellImage: 'Imagen',
-                cellCaption: 'Subtítulo',
-                properties: '⚙️ Propiedades',
-                clickToSelect: 'Clic para seleccionar',
-                darkTheme: '🌙 Oscuro',
-                lightTheme: '☀️ Claro',
-                defaultCellText: '',
-                noBoard: 'Sin tablero',
-                selectImage: 'Seleccionar',
-                bingoMessage: '🎉 ¡BINGO! 🎉',
-                characters: 'caracteres',
-                ok: 'OK'
+                creator: '✏️ Creador', player: '🎮 Jugador',
+                saveGroup: '💾 Guardar grupo', loadGroup: '📂 Cargar grupo',
+                newGroup: '➕ Nuevo grupo', addCard: '➕ Añadir tarjeta',
+                title: 'Título', bingoType: 'Tipo de bingo', cellSize: 'Tamaño', bgColor: 'Color de fondo',
+                resetColor: 'Restablecer', saveCard: '💾 Guardar', loadCard: '📂 Cargar',
+                pngCard: '🖼️ PNG', deleteCard: '🗑️ Eliminar',
+                properties: '⚙️ Propiedades', bingoMsg: '🎉 ¡BINGO! 🎉',
+                group: 'Grupo', cannotDeleteOnlyCard: 'No se puede eliminar la única tarjeta',
+                rows: 'Filas', cols: 'Columnas', apply: 'Aplicar',
+                types: { standard: 'Estándar', fullHouse: 'Full House', diagonal: 'Diagonal', doubleDiagonal: 'Double Diagonal', vertical: 'Vertical', horizontal: 'Horizontal', cross: 'Cruz' },
+                clickToSelect: 'Clic para seleccionar grupo',
+                lightTheme: '☀️ Claro', darkTheme: '🌙 Oscuro',
+                textLabel: 'Texto', textPlaceholder: 'Ingrese texto',
+                imageLabel: 'Imagen', imagePlaceholder: 'URL o seleccione archivo',
+                captionLabel: 'Subtítulo', captionPlaceholder: 'Ingrese subtítulo',
+                groupNamePlaceholder: 'Nombre del grupo'
             },
             fr: {
-                creator: '✏️ Créateur',
-                player: '🎮 Joueur',
-                rows: 'Lignes',
-                cols: 'Colonnes',
-                saveBingo: '💾 Enregistrer .bingo',
-                loadBingo: '📂 Charger .bingo',
-                exportPng: '🖼️ Enregistrer PNG',
-                newBoard: '➕ Nouveau plateau',
-                boards: '📋 Plateaux',
-                title: 'Titre',
-                description: 'Description',
-                bingoType: 'Type de bingo',
-                types: {
-                    standard: 'Standard (ligne)',
-                    fullHouse: 'Full House',
-                    diagonal: 'Diagonale',
-                    doubleDiagonal: 'Double diagonale',
-                    vertical: 'Verticale',
-                    horizontal: 'Horizontale',
-                    cross: 'Croix (vert+horiz)'
-                },
-                cellText: 'Texte',
-                cellImage: 'Image',
-                cellCaption: 'Légende',
-                properties: '⚙️ Propriétés',
-                clickToSelect: 'Cliquez pour sélectionner',
-                darkTheme: '🌙 Sombre',
-                lightTheme: '☀️ Clair',
-                defaultCellText: '',
-                noBoard: 'Aucun plateau',
-                selectImage: 'Choisir',
-                bingoMessage: '🎉 BINGO ! 🎉',
-                characters: 'caractères',
-                ok: 'OK'
+                creator: '✏️ Créateur', player: '🎮 Joueur',
+                saveGroup: '💾 Enregistrer groupe', loadGroup: '📂 Charger groupe',
+                newGroup: '➕ Nouveau groupe', addCard: '➕ Ajouter carte',
+                title: 'Titre', bingoType: 'Type de bingo', cellSize: 'Taille', bgColor: 'Couleur de fond',
+                resetColor: 'Réinitialiser', saveCard: '💾 Enregistrer', loadCard: '📂 Charger',
+                pngCard: '🖼️ PNG', deleteCard: '🗑️ Supprimer',
+                properties: '⚙️ Propriétés', bingoMsg: '🎉 BINGO ! 🎉',
+                group: 'Groupe', cannotDeleteOnlyCard: 'Impossible de supprimer la seule carte',
+                rows: 'Lignes', cols: 'Colonnes', apply: 'Appliquer',
+                types: { standard: 'Standard', fullHouse: 'Full House', diagonal: 'Diagonale', doubleDiagonal: 'Double diagonale', vertical: 'Verticale', horizontal: 'Horizontale', cross: 'Croix' },
+                clickToSelect: 'Cliquez pour sélectionner le groupe',
+                lightTheme: '☀️ Clair', darkTheme: '🌙 Sombre',
+                textLabel: 'Texte', textPlaceholder: 'Entrez le texte',
+                imageLabel: 'Image', imagePlaceholder: 'URL ou sélectionner',
+                captionLabel: 'Légende', captionPlaceholder: 'Entrez la légende',
+                groupNamePlaceholder: 'Nom du groupe'
             },
             de: {
-                creator: '✏️ Ersteller',
-                player: '🎮 Spieler',
-                rows: 'Zeilen',
-                cols: 'Spalten',
-                saveBingo: '💾 .bingo speichern',
-                loadBingo: '📂 .bingo laden',
-                exportPng: '🖼️ PNG speichern',
-                newBoard: '➕ Neues Brett',
-                boards: '📋 Bretter',
-                title: 'Titel',
-                description: 'Beschreibung',
-                bingoType: 'Bingo-Typ',
-                types: {
-                    standard: 'Standard (Linie)',
-                    fullHouse: 'Full House',
-                    diagonal: 'Diagonale',
-                    doubleDiagonal: 'Doppelte Diagonale',
-                    vertical: 'Vertikal',
-                    horizontal: 'Horizontal',
-                    cross: 'Kreuz (vert+horiz)'
-                },
-                cellText: 'Text',
-                cellImage: 'Bild',
-                cellCaption: 'Bildunterschrift',
-                properties: '⚙️ Eigenschaften',
+                creator: '✏️ Ersteller', player: '🎮 Spieler',
+                saveGroup: '💾 Gruppe speichern', loadGroup: '📂 Gruppe laden',
+                newGroup: '➕ Neue Gruppe', addCard: '➕ Karte hinzufügen',
+                title: 'Titel', bingoType: 'Bingo-Typ', cellSize: 'Zellengröße', bgColor: 'Hintergrundfarbe',
+                resetColor: 'Zurücksetzen', saveCard: '💾 Speichern', loadCard: '📂 Laden',
+                pngCard: '🖼️ PNG', deleteCard: '🗑️ Löschen',
+                properties: '⚙️ Eigenschaften', bingoMsg: '🎉 BINGO! 🎉',
+                group: 'Gruppe', cannotDeleteOnlyCard: 'Die einzige Karte kann nicht gelöscht werden',
+                rows: 'Zeilen', cols: 'Spalten', apply: 'Anwenden',
+                types: { standard: 'Standard', fullHouse: 'Full House', diagonal: 'Diagonale', doubleDiagonal: 'Doppelte Diagonale', vertical: 'Vertikal', horizontal: 'Horizontal', cross: 'Kreuz' },
                 clickToSelect: 'Zum Auswählen klicken',
-                darkTheme: '🌙 Dunkel',
-                lightTheme: '☀️ Hell',
-                defaultCellText: '',
-                noBoard: 'Kein Brett',
-                selectImage: 'Auswählen',
-                bingoMessage: '🎉 BINGO! 🎉',
-                characters: 'Zeichen',
-                ok: 'OK'
+                lightTheme: '☀️ Hell', darkTheme: '🌙 Dunkel',
+                textLabel: 'Text', textPlaceholder: 'Text eingeben',
+                imageLabel: 'Bild', imagePlaceholder: 'URL oder Datei',
+                captionLabel: 'Bildunterschrift', captionPlaceholder: 'Unterschrift eingeben',
+                groupNamePlaceholder: 'Gruppenname'
             },
             zh: {
-                creator: '✏️ 创建者',
-                player: '🎮 玩家',
-                rows: '行数',
-                cols: '列数',
-                saveBingo: '💾 保存 .bingo',
-                loadBingo: '📂 加载 .bingo',
-                exportPng: '🖼️ 保存 PNG',
-                newBoard: '➕ 新建板子',
-                boards: '📋 板子列表',
-                title: '标题',
-                description: '描述',
-                bingoType: '宾果类型',
-                types: {
-                    standard: '标准 (连线)',
-                    fullHouse: '全满',
-                    diagonal: '对角线',
-                    doubleDiagonal: '双对角线',
-                    vertical: '垂直',
-                    horizontal: '水平',
-                    cross: '十字 (垂直+水平)'
-                },
-                cellText: '文本',
-                cellImage: '图片',
-                cellCaption: '说明',
-                properties: '⚙️ 单元格属性',
-                clickToSelect: '点击板子选择',
-                darkTheme: '🌙 深色',
-                lightTheme: '☀️ 浅色',
-                defaultCellText: '',
-                noBoard: '无活动板子',
-                selectImage: '选择',
-                bingoMessage: '🎉 宾果！ 🎉',
-                characters: '字符',
-                ok: '确定'
+                creator: '✏️ 创建者', player: '🎮 玩家',
+                saveGroup: '💾 保存组', loadGroup: '📂 加载组',
+                newGroup: '➕ 新建组', addCard: '➕ 添加卡片',
+                title: '标题', bingoType: '宾果类型', cellSize: '格子大小', bgColor: '背景颜色',
+                resetColor: '重置', saveCard: '💾 保存', loadCard: '📂 加载',
+                pngCard: '🖼️ PNG', deleteCard: '🗑️ 删除',
+                properties: '⚙️ 属性', bingoMsg: '🎉 宾果！ 🎉',
+                group: '组', cannotDeleteOnlyCard: '无法删除唯一卡片',
+                rows: '行', cols: '列', apply: '应用',
+                types: { standard: '标准', fullHouse: 'Full House', diagonal: 'Diagonal', doubleDiagonal: 'Double Diagonal', vertical: 'Vertical', horizontal: 'Horizontal', cross: 'Cross' },
+                clickToSelect: '点击组选择',
+                lightTheme: '☀️ 浅色', darkTheme: '🌙 深色',
+                textLabel: '文本', textPlaceholder: '输入文本',
+                imageLabel: '图片', imagePlaceholder: 'URL或选择文件',
+                captionLabel: '说明', captionPlaceholder: '输入说明',
+                groupNamePlaceholder: '组名称'
             }
         };
 
         let currentLang = 'en';
+        function t(key) {
+            if (key === 'types') return i18n[currentLang]?.types || i18n.en.types;
+            return i18n[currentLang]?.[key] || i18n.en[key] || key;
+        }
+
+        // Данные
         let boards = [];
-        let activeBoardIndex = 0;
+        let activeGroupIdx = 0;
         let currentMode = 'creator';
-        let selectedCellRow = -1, selectedCellCol = -1;
         let currentTheme = 'dark';
-        let bingoMessageTimeout = null;
+        let selectedCell = null;
+        const DEFAULT_CARD_BG = '#3a4a5e';
 
         // DOM элементы
         const modeBtns = document.querySelectorAll('.mode-btn');
         const langSelect = document.getElementById('lang-select');
-        const rowsInput = document.getElementById('rows-input');
-        const colsInput = document.getElementById('cols-input');
-        const saveBingoBtn = document.getElementById('save-bingo-btn');
-        const loadBtn = document.getElementById('load-bingo-input-btn');
-        const fileInput = document.getElementById('bingo-file-input');
-        const exportPngBtn = document.getElementById('export-png-btn');
-        const newBoardBtn = document.getElementById('new-board-btn');
+        const saveGroupBtn = document.getElementById('save-group-btn');
+        const loadGroupBtn = document.getElementById('load-group-btn');
+        const groupFileInput = document.getElementById('group-file-input');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
         const boardsListEl = document.getElementById('boards-list');
-        const container = document.getElementById('active-board-container');
+        const newBoardBtn = document.getElementById('new-board-btn');
+        const cardsContainer = document.getElementById('cards-container');
+        const addCardBtn = document.getElementById('add-card-btn');
         const propertyPanel = document.getElementById('property-panel');
         const cellTextInp = document.getElementById('cell-text');
         const cellImageInp = document.getElementById('cell-image');
         const cellCaptionInp = document.getElementById('cell-caption');
-        const themeToggleBtn = document.getElementById('theme-toggle-btn');
         const selectImageBtn = document.getElementById('select-image-btn');
         const clearImageBtn = document.getElementById('clear-image-btn');
         const imageFileInput = document.getElementById('image-file-input');
+        const groupTitleInput = document.getElementById('group-title-input');
 
-        function t(key) {
-            return i18n[currentLang]?.[key] || i18n.en[key] || key;
+        // Вспомогательные функции
+        function escapeHtml(txt){ return String(txt||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]); }
+        function getContrastColor(hex) {
+            if (!hex || hex === 'transparent') return '#000000';
+            let r, g, b;
+            if (hex.startsWith('#')) {
+                const hexStr = hex.slice(1);
+                if (hexStr.length === 3) { r = parseInt(hexStr[0]+hexStr[0],16); g = parseInt(hexStr[1]+hexStr[1],16); b = parseInt(hexStr[2]+hexStr[2],16); }
+                else { r = parseInt(hexStr.substr(0,2),16); g = parseInt(hexStr.substr(2,2),16); b = parseInt(hexStr.substr(4,2),16); }
+            } else return '#000000';
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return luminance > 0.5 ? '#000000' : '#ffffff';
         }
-
-        function tType(typeKey) {
-            return i18n[currentLang]?.types?.[typeKey] || i18n.en.types[typeKey] || typeKey;
+        function darkenColor(hex, percent = 0.15) {
+            if (!hex) return hex;
+            let r, g, b;
+            if (hex.startsWith('#')) {
+                const hexStr = hex.slice(1);
+                if (hexStr.length === 3) { r = parseInt(hexStr[0]+hexStr[0],16); g = parseInt(hexStr[1]+hexStr[1],16); b = parseInt(hexStr[2]+hexStr[2],16); }
+                else { r = parseInt(hexStr.substr(0,2),16); g = parseInt(hexStr.substr(2,2),16); b = parseInt(hexStr.substr(4,2),16); }
+            } else return hex;
+            r = Math.max(0, Math.floor(r * (1 - percent)));
+            g = Math.max(0, Math.floor(g * (1 - percent)));
+            b = Math.max(0, Math.floor(b * (1 - percent)));
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
         }
-
-        function showModal(message) {
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            overlay.innerHTML = `
-                <div class="modal-box">
-                    <p>${message}</p>
-                    <button class="btn" id="modal-ok-btn">${t('ok')}</button>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-            const okBtn = overlay.querySelector('#modal-ok-btn');
-            okBtn.addEventListener('click', () => overlay.remove());
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) overlay.remove();
-            });
+        function defaultCard(){
+            return {
+                title: 'Card',
+                bingoType: 'standard',
+                rows: 3, cols: 3,
+                cells: Array(3).fill().map(()=>Array(3).fill().map(()=>({text:'', imageUrl:'', caption:'', completed:false}))),
+                style: { cellSize: 100, bgColor: DEFAULT_CARD_BG }
+            };
         }
-
-        function updateUILanguage() {
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const k = el.getAttribute('data-i18n');
-                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                    el.placeholder = t(k);
-                } else {
-                    el.innerHTML = t(k);
-                }
-            });
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
-            });
-            themeToggleBtn.innerHTML = currentTheme === 'dark' ? t('lightTheme') : t('darkTheme');
-            if (propertyPanel.style.display !== 'none') {
-                propertyPanel.querySelector('h4').innerHTML = t('properties');
-            }
-            const typeSelect = document.getElementById('bingo-type');
-            if (typeSelect) {
-                const types = ['standard','fullHouse','diagonal','doubleDiagonal','vertical','horizontal','cross'];
-                Array.from(typeSelect.options).forEach((opt, idx) => {
-                    if (types[idx]) opt.text = tType(types[idx]);
-                });
-            }
-            renderActiveBoard();
-        }
-
-        function setTheme(theme) {
-            currentTheme = theme;
-            document.body.className = theme;
-            themeToggleBtn.innerHTML = theme === 'dark' ? t('lightTheme') : t('darkTheme');
-            renderActiveBoard();
-        }
-
-        themeToggleBtn.addEventListener('click', () => setTheme(currentTheme === 'dark' ? 'light' : 'dark'));
-
-        function checkBingo(board) {
+        function defaultGroup(){ return { title: 'Group 1', cards: [defaultCard()] }; }
+        function checkCardBingo(card){
             if (currentMode !== 'player') return false;
-            const { rows, cols, cells, bingoType } = board;
-            
-            switch (bingoType) {
-                case 'standard': {
-                    for (let r=0; r<rows; r++) {
-                        if (Array(cols).fill().every((_,c) => cells[r][c].completed)) return true;
-                    }
-                    for (let c=0; c<cols; c++) {
-                        if (Array(rows).fill().every((_,r) => cells[r][c].completed)) return true;
-                    }
+            const { rows, cols, cells, bingoType } = card;
+            const completed = (r,c) => cells[r][c].completed;
+            switch(bingoType){
+                case 'standard':
+                    for(let r=0; r<rows; r++) if(Array(cols).fill().every((_,c)=>completed(r,c))) return true;
+                    for(let c=0; c<cols; c++) if(Array(rows).fill().every((_,r)=>completed(r,c))) return true;
                     return false;
-                }
-                case 'fullHouse':
-                    return cells.every(row => row.every(cell => cell.completed));
-                case 'diagonal':
-                    if (rows !== cols) return false;
-                    return Array(rows).fill().every((_,i) => cells[i][i].completed);
-                case 'doubleDiagonal':
-                    if (rows !== cols) return false;
-                    return Array(rows).fill().every((_,i) => cells[i][i].completed) &&
-                           Array(rows).fill().every((_,i) => cells[i][cols-1-i].completed);
-                case 'vertical':
-                    return Array(cols).fill().some((_,c) => Array(rows).fill().every((_,r) => cells[r][c].completed));
-                case 'horizontal':
-                    return Array(rows).fill().some((_,r) => Array(cols).fill().every((_,c) => cells[r][c].completed));
+                case 'fullHouse': return cells.every(row=>row.every(c=>c.completed));
+                case 'diagonal': return rows===cols && Array(rows).fill().every((_,i)=>completed(i,i));
+                case 'doubleDiagonal': return rows===cols && Array(rows).fill().every((_,i)=>completed(i,i)) && Array(rows).fill().every((_,i)=>completed(i,cols-1-i));
+                case 'vertical': return Array(cols).fill().some((_,c)=>Array(rows).fill().every((_,r)=>completed(r,c)));
+                case 'horizontal': return Array(rows).fill().some((_,r)=>Array(cols).fill().every((_,c)=>completed(r,c)));
                 case 'cross': {
-                    if (rows < 2 || cols < 2) return false;
-                    const midRow = Math.floor(rows/2);
-                    const midCol = Math.floor(cols/2);
-                    const rowComplete = Array(cols).fill().every((_,c) => cells[midRow][c].completed);
-                    const colComplete = Array(rows).fill().every((_,r) => cells[r][midCol].completed);
-                    return rowComplete && colComplete;
+                    if(rows<2||cols<2) return false;
+                    const mr = Math.floor(rows/2), mc = Math.floor(cols/2);
+                    return Array(cols).fill().every((_,c)=>completed(mr,c)) && Array(rows).fill().every((_,r)=>completed(r,mc));
                 }
                 default: return false;
             }
         }
 
-        function showBingoMessage() {
-            if (bingoMessageTimeout) clearTimeout(bingoMessageTimeout);
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'bingo-message';
-            msgDiv.textContent = t('bingoMessage');
-            document.body.appendChild(msgDiv);
-            bingoMessageTimeout = setTimeout(() => msgDiv.remove(), 2000);
+        // Обновление цвета карточки (мгновенно и полностью)
+        function updateCardColor(cardWrapper, newColor) {
+            const textColor = getContrastColor(newColor);
+            const cellBgColor = darkenColor(newColor, 0.15);
+            
+            cardWrapper.style.backgroundColor = newColor;
+            cardWrapper.style.color = textColor;
+            cardWrapper.style.borderColor = textColor + '20';
+            
+            const grid = cardWrapper.querySelector('.bingo-grid');
+            if (grid) grid.style.backgroundColor = newColor;
+            
+            cardWrapper.querySelectorAll('.bingo-cell').forEach(cell => cell.style.backgroundColor = cellBgColor);
+            
+            // Обновляем классы для стрелок и опций
+            cardWrapper.classList.remove('light-text', 'dark-text');
+            cardWrapper.classList.add(textColor === '#000000' ? 'light-text' : 'dark-text');
+            cardWrapper.style.setProperty('--card-bg', newColor);
+            
+            // Обновляем стили всех интерактивных элементов и текста
+            cardWrapper.querySelectorAll('input, select, button, .color-swatch, label, span, .card-meta-row').forEach(el => {
+                if (el.classList.contains('color-swatch')) {
+                    el.style.setProperty('--swatch-color', newColor);
+                    el.style.backgroundColor = newColor;
+                } else {
+                    el.style.background = textColor + '10';
+                    el.style.borderColor = textColor + '30';
+                    el.style.color = textColor;
+                }
+            });
+            // Отдельно для текстовых лейблов (не input/select/button)
+            cardWrapper.querySelectorAll('.card-meta-row').forEach(el => el.style.color = textColor);
         }
 
-        function createDefaultBoard() {
-            const rows = parseInt(rowsInput.value) || 3;
-            const cols = parseInt(colsInput.value) || 3;
-            return {
-                title: t('title') + ' 1',
-                description: '',
-                bingoType: 'standard',
-                rows: rows,
-                cols: cols,
-                cells: Array(rows).fill().map(() => Array(cols).fill().map(() => ({
-                    text: '',
-                    imageUrl: '',
-                    caption: '',
-                    completed: false
-                })))
+        // Обновление конкретной ячейки в DOM
+        function updateCellInDOM(cardIdx, row, col) {
+            const card = boards[activeGroupIdx].cards[cardIdx];
+            const cell = card.cells[row][col];
+            const cellDiv = document.querySelector(`.bingo-cell[data-card="${cardIdx}"][data-row="${row}"][data-col="${col}"]`);
+            if (!cellDiv) return;
+            const contentDiv = cellDiv.querySelector('.cell-content');
+            if (!contentDiv) return;
+            contentDiv.innerHTML = '';
+            if (cell.imageUrl) {
+                const img = document.createElement('img');
+                img.src = cell.imageUrl;
+                img.className = 'cell-image';
+                contentDiv.appendChild(img);
+            }
+            if (cell.text) {
+                const textDiv = document.createElement('div');
+                textDiv.className = 'cell-text';
+                textDiv.textContent = cell.text;
+                contentDiv.appendChild(textDiv);
+            }
+            if (cell.caption) {
+                const captionDiv = document.createElement('div');
+                captionDiv.className = 'cell-caption';
+                captionDiv.textContent = cell.caption;
+                contentDiv.appendChild(captionDiv);
+            }
+            if (!cell.imageUrl && !cell.text && !cell.caption) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'cell-text';
+                emptyDiv.textContent = '➕';
+                contentDiv.appendChild(emptyDiv);
+            }
+        }
+
+        function saveFocus() {
+            const active = document.activeElement;
+            if (!active || !active.dataset) return null;
+            // Сохраняем позицию курсора для текстовых полей
+            const cursorPos = (active.type === 'text' || active.type === 'search' || active.tagName === 'INPUT') ? active.selectionStart : null;
+            return { 
+                id: active.id, 
+                card: active.dataset.card, 
+                field: active.dataset.field, 
+                action: active.dataset.action,
+                cursorPos: cursorPos,
+                value: active.value
             };
         }
-
-        function initBoards() {
-            if (boards.length === 0) {
-                boards.push(createDefaultBoard());
-                activeBoardIndex = 0;
-            }
-            renderBoardsList();
-            renderActiveBoard();
-            updateSizeInputs();
-        }
-
-        function renderBoardsList() {
-            boardsListEl.innerHTML = '';
-            boards.forEach((board, idx) => {
-                const li = document.createElement('li');
-                li.className = `board-item ${idx === activeBoardIndex ? 'active' : ''}`;
-                li.innerHTML = `
-                    <span style="flex:1;" data-board-index="${idx}">${escapeHtml(board.title) || t('noBoard')}</span>
-                    <div class="board-item-actions">
-                        <button data-delete-index="${idx}" title="Delete">🗑️</button>
-                    </div>
-                `;
-                li.querySelector('span').addEventListener('click', () => {
-                    activeBoardIndex = idx;
-                    renderBoardsList();
-                    renderActiveBoard();
-                    updateSizeInputs();
-                    selectedCellRow = selectedCellCol = -1;
-                    propertyPanel.style.display = 'none';
-                });
-                li.querySelector('button').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (boards.length <= 1) {
-                        showModal(t('noBoard'));
-                        return;
+        function restoreFocus(focusInfo) {
+            if (!focusInfo) return;
+            let el;
+            if (focusInfo.id) el = document.getElementById(focusInfo.id);
+            else if (focusInfo.card && focusInfo.field) el = document.querySelector(`[data-card="${focusInfo.card}"][data-field="${focusInfo.field}"]`);
+            else if (focusInfo.card && focusInfo.action) el = document.querySelector(`[data-card="${focusInfo.card}"][data-action="${focusInfo.action}"]`);
+            if (el) {
+                el.focus();
+                // Для текстовых полей ставим курсор в сохранённую позицию (или в конец), но не выделяем
+                if ((el.type === 'text' || el.tagName === 'INPUT') && focusInfo.cursorPos !== null) {
+                    if (el.value === focusInfo.value) {
+                        el.setSelectionRange(focusInfo.cursorPos, focusInfo.cursorPos);
+                    } else {
+                        // Если значение изменилось, ставим курсор в конец
+                        const len = el.value.length;
+                        el.setSelectionRange(len, len);
                     }
-                    boards.splice(idx, 1);
-                    if (activeBoardIndex >= boards.length) activeBoardIndex = boards.length-1;
-                    renderBoardsList();
-                    renderActiveBoard();
-                    updateSizeInputs();
-                });
-                boardsListEl.appendChild(li);
-            });
-        }
-
-        function getActiveBoard() {
-            return boards[activeBoardIndex];
-        }
-
-        function updateSizeInputs() {
-            const board = getActiveBoard();
-            if (board) {
-                rowsInput.value = board.rows;
-                colsInput.value = board.cols;
-            }
-            // Блокировка в режиме пользователя
-            rowsInput.disabled = (currentMode === 'player');
-            colsInput.disabled = (currentMode === 'player');
-        }
-
-        function renderActiveBoard() {
-            const board = getActiveBoard();
-            if (!board) return;
-            const { title, description, bingoType, rows, cols, cells } = board;
-            const readonlyAttr = currentMode === 'player' ? 'readonly disabled' : '';
-
-            let html = `
-                <div class="board-meta">
-                    <input type="text" id="board-title" placeholder="${t('title')}" value="${escapeHtml(title)}" ${readonlyAttr} />
-                    <div style="width:100%;">
-                        <textarea id="board-desc" placeholder="${t('description')}" maxlength="100" ${readonlyAttr}>${escapeHtml(description)}</textarea>
-                        <div class="char-counter" id="desc-char-counter" style="font-size:12px; color: var(--text-secondary); text-align:right;">${description.length}/100 ${t('characters')}</div>
-                    </div>
-            `;
-            if (currentMode === 'creator') {
-                html += `<div class="bingo-type-selector">
-                    <label>${t('bingoType')}:</label>
-                    <select id="bingo-type">
-                        <option value="standard" ${bingoType==='standard'?'selected':''}>${tType('standard')}</option>
-                        <option value="fullHouse" ${bingoType==='fullHouse'?'selected':''}>${tType('fullHouse')}</option>
-                        <option value="diagonal" ${bingoType==='diagonal'?'selected':''}>${tType('diagonal')}</option>
-                        <option value="doubleDiagonal" ${bingoType==='doubleDiagonal'?'selected':''}>${tType('doubleDiagonal')}</option>
-                        <option value="vertical" ${bingoType==='vertical'?'selected':''}>${tType('vertical')}</option>
-                        <option value="horizontal" ${bingoType==='horizontal'?'selected':''}>${tType('horizontal')}</option>
-                        <option value="cross" ${bingoType==='cross'?'selected':''}>${tType('cross')}</option>
-                    </select>
-                </div>`;
-            } else {
-                html += `<div class="bingo-type-selector"><strong>${t('bingoType')}:</strong> ${tType(bingoType || 'standard')}</div>`;
-            }
-            html += `</div>`;
-
-            html += `<div class="bingo-grid" id="bingo-grid" style="grid-template-columns: repeat(${cols}, var(--cell-size));">`;
-            for (let r=0; r<rows; r++) {
-                for (let c=0; c<cols; c++) {
-                    const cell = cells[r]?.[c] || { text:'', imageUrl:'', caption:'', completed:false };
-                    const completedClass = (currentMode === 'player' && cell.completed) ? 'completed' : '';
-                    const selectedClass = (currentMode === 'creator' && selectedCellRow === r && selectedCellCol === c) ? 'selected-creator' : '';
-                    html += `<div class="bingo-cell ${completedClass} ${selectedClass}" data-row="${r}" data-col="${c}">`;
-                    html += `<div class="cell-content">`;
-                    if (cell.imageUrl) {
-                        html += `<img src="${escapeHtml(cell.imageUrl)}" class="cell-image" alt="img">`;
-                    }
-                    if (cell.text) {
-                        html += `<div class="cell-text">${escapeHtml(cell.text)}</div>`;
-                    }
-                    if (cell.caption) {
-                        html += `<div class="cell-caption">${escapeHtml(cell.caption)}</div>`;
-                    }
-                    if (!cell.imageUrl && !cell.text && !cell.caption) {
-                        html += `<div class="cell-text">💡</div>`;
-                    }
-                    html += `</div></div>`;
+                } else if (el.type === 'number') {
+                    el.select();
                 }
             }
-            html += `</div>`;
-            container.innerHTML = html;
+        }
 
-            document.querySelectorAll('.bingo-cell').forEach(cellDiv => {
-                cellDiv.addEventListener('click', (e) => {
-                    const row = parseInt(cellDiv.dataset.row);
-                    const col = parseInt(cellDiv.dataset.col);
-                    handleCellClick(row, col);
-                });
+        function renderActiveGroup(){
+            const group = boards[activeGroupIdx];
+            if(!group) return;
+            groupTitleInput.value = group.title || '';
+            groupTitleInput.placeholder = t('groupNamePlaceholder');
+            groupTitleInput.readOnly = (currentMode !== 'creator');
+            addCardBtn.style.display = currentMode === 'creator' ? 'inline-block' : 'none';
+            addCardBtn.textContent = t('addCard');
+
+            const focusInfo = saveFocus();
+            let cardsHtml = '';
+            group.cards.forEach((card, cardIdx) => {
+                const isCreator = currentMode === 'creator';
+                const cellSize = card.style?.cellSize || 100;
+                const bgColor = card.style?.bgColor || DEFAULT_CARD_BG;
+                const textColor = getContrastColor(bgColor);
+                const cellBgColor = darkenColor(bgColor, 0.15);
+                const activeClass = (selectedCell && selectedCell.groupIdx === activeGroupIdx && selectedCell.cardIdx === cardIdx) ? 'active-card' : '';
+                const typeNames = t('types');
+
+                cardsHtml += `<div class="card-wrapper ${activeClass} ${textColor === '#000000' ? 'light-text' : 'dark-text'}" data-card-index="${cardIdx}" style="--cell-size: ${cellSize}px; background-color: ${bgColor}; color: ${textColor}; border-color: ${textColor}20; --card-bg: ${bgColor};">`;
+                cardsHtml += `<div class="card-header">`;
+                cardsHtml += `<input type="text" class="card-title-input" value="${escapeHtml(card.title)}" placeholder="${t('title')}" data-card="${cardIdx}" data-field="title" ${isCreator?'':'readonly'} style="background:${textColor}10; border-color:${textColor}30; color:${textColor};">`;
+                cardsHtml += `</div>`;
+                
+                if(isCreator){
+                    cardsHtml += `<div class="card-meta-row" style="color:${textColor};">`;
+                    cardsHtml += `<div class="dimension-control">`;
+                    cardsHtml += `<input type="number" min="1" max="8" value="${card.rows}" data-card="${cardIdx}" data-field="rows" style="width:60px; background:${textColor}10; border-color:${textColor}30; color:${textColor};">`;
+                    cardsHtml += `<span>✕</span>`;
+                    cardsHtml += `<input type="number" min="1" max="8" value="${card.cols}" data-card="${cardIdx}" data-field="cols" style="width:60px; background:${textColor}10; border-color:${textColor}30; color:${textColor};">`;
+                    cardsHtml += `<button class="btn-outline btn" data-card="${cardIdx}" data-action="applySize" style="padding:4px 10px; background:${textColor}10; border-color:${textColor}30; color:${textColor};">${t('apply')}</button>`;
+                    cardsHtml += `</div>`;
+                    cardsHtml += `<label>${t('bingoType')}: <select data-card="${cardIdx}" data-field="bingoType" style="background:${textColor}10; border-color:${textColor}30; color:${textColor};">`;
+                    ['standard','fullHouse','diagonal','doubleDiagonal','vertical','horizontal','cross'].forEach(t=> {
+                        cardsHtml += `<option value="${t}" ${card.bingoType===t?'selected':''}>${typeNames[t] || t}</option>`;
+                    });
+                    cardsHtml += `</select></label>`;
+                    cardsHtml += `<label>${t('cellSize')}: <input type="number" min="60" max="200" value="${cellSize}" data-card="${cardIdx}" data-field="cellSize" style="width:70px; background:${textColor}10; border-color:${textColor}30; color:${textColor};">px</label>`;
+                    cardsHtml += `<div style="display:flex; align-items:center; gap:6px;">`;
+                    cardsHtml += `<span>${t('bgColor')}:</span>`;
+                    cardsHtml += `<div class="color-swatch" data-card="${cardIdx}" data-action="openColorPicker" style="--swatch-color: ${bgColor}; background: ${bgColor};"></div>`;
+                    cardsHtml += `<input type="color" value="${bgColor}" data-card="${cardIdx}" data-field="bgColor" class="hidden-color-input" id="color-input-${cardIdx}">`;
+                    cardsHtml += `<button class="btn-outline btn" data-card="${cardIdx}" data-action="resetColor" style="padding:4px 8px; background:${textColor}10; border-color:${textColor}30; color:${textColor};">${t('resetColor')}</button>`;
+                    cardsHtml += `</div></div>`;
+                } else {
+                    cardsHtml += `<div class="card-meta-row" style="color:${textColor};"><strong>${card.rows}✕${card.cols}</strong> | ${t('bingoType')}: ${typeNames[card.bingoType] || card.bingoType} | ${t('cellSize')}: ${cellSize}px</div>`;
+                }
+                
+                const { rows, cols, cells } = card;
+                cardsHtml += `<div class="bingo-grid" style="grid-template-columns: repeat(${cols}, var(--cell-size)); background-color: ${bgColor};">`;
+                for(let r=0; r<rows; r++){
+                    for(let c=0; c<cols; c++){
+                        const cell = cells[r][c];
+                        const completedClass = (currentMode==='player' && cell.completed) ? 'completed' : '';
+                        const selectedClass = (isCreator && selectedCell && selectedCell.groupIdx===activeGroupIdx && selectedCell.cardIdx===cardIdx && selectedCell.row===r && selectedCell.col===c) ? 'selected-creator' : '';
+                        cardsHtml += `<div class="bingo-cell ${completedClass} ${selectedClass}" data-card="${cardIdx}" data-row="${r}" data-col="${c}" style="background-color: ${cellBgColor};"><div class="cell-content">`;
+                        if(cell.imageUrl) cardsHtml += `<img src="${escapeHtml(cell.imageUrl)}" class="cell-image">`;
+                        if(cell.text) cardsHtml += `<div class="cell-text">${escapeHtml(cell.text)}</div>`;
+                        if(cell.caption) cardsHtml += `<div class="cell-caption">${escapeHtml(cell.caption)}</div>`;
+                        if(!cell.imageUrl && !cell.text && !cell.caption) cardsHtml += `<div class="cell-text">➕</div>`;
+                        cardsHtml += `</div></div>`;
+                    }
+                }
+                cardsHtml += `</div>`;
+                
+                cardsHtml += `<div class="card-actions">`;
+                if(isCreator){
+                    cardsHtml += `<button class="btn-outline btn save-card-btn" data-card="${cardIdx}" style="background:${textColor}10; border-color:${textColor}30; color:${textColor};">${t('saveCard')}</button>`;
+                    cardsHtml += `<button class="btn-outline btn load-card-btn" data-card="${cardIdx}" style="background:${textColor}10; border-color:${textColor}30; color:${textColor};">${t('loadCard')}</button>`;
+                }
+                cardsHtml += `<button class="btn-outline btn png-card-btn" data-card="${cardIdx}" style="background:${textColor}10; border-color:${textColor}30; color:${textColor};">${t('pngCard')}</button>`;
+                if(isCreator) cardsHtml += `<button class="btn-outline btn delete-card-btn" data-card="${cardIdx}" style="background:${textColor}10; border-color:${textColor}30; color:${textColor};">${t('deleteCard')}</button>`;
+                cardsHtml += `</div><div class="bingo-message-placeholder" data-card="${cardIdx}"></div></div>`;
             });
-
-            const titleInp = document.getElementById('board-title');
-            const descInp = document.getElementById('board-desc');
-            const charCounter = document.getElementById('desc-char-counter');
             
-            if (titleInp && currentMode === 'creator') {
-                titleInp.addEventListener('input', (e) => { board.title = e.target.value; renderBoardsList(); });
-            }
-            if (descInp && currentMode === 'creator') {
-                descInp.addEventListener('input', (e) => {
-                    board.description = e.target.value;
-                    if (charCounter) charCounter.textContent = `${e.target.value.length}/100 ${t('characters')}`;
-                });
-            }
-            const typeSelect = document.getElementById('bingo-type');
-            if (typeSelect && currentMode === 'creator') {
-                typeSelect.addEventListener('change', (e) => { board.bingoType = e.target.value; });
-            }
-
-            if (currentMode === 'player') {
-                propertyPanel.style.display = 'none';
-                selectedCellRow = selectedCellCol = -1;
-            } else {
-                propertyPanel.style.display = (selectedCellRow !== -1) ? 'block' : 'none';
-                if (selectedCellRow !== -1) {
-                    const cell = board.cells[selectedCellRow][selectedCellCol];
-                    cellTextInp.value = cell.text || '';
-                    cellImageInp.value = cell.imageUrl || '';
-                    cellCaptionInp.value = cell.caption || '';
+            cardsContainer.innerHTML = cardsHtml;
+            
+            // Привязка событий
+            document.querySelectorAll('.card-wrapper').forEach(wrapper => {
+                const cardIdx = parseInt(wrapper.dataset.cardIndex);
+                wrapper.querySelectorAll('.bingo-cell').forEach(cellDiv => cellDiv.addEventListener('click', () => handleCellClick(cardIdx, parseInt(cellDiv.dataset.row), parseInt(cellDiv.dataset.col))));
+                if(currentMode === 'creator'){
+                    wrapper.querySelectorAll('[data-field]').forEach(el => {
+                        if (el.type === 'color') return;
+                        el.addEventListener('input', (e) => {
+                            const card = group.cards[cardIdx];
+                            const field = el.dataset.field;
+                            if(field === 'title') card.title = el.value;
+                            else if(field === 'bingoType') card.bingoType = el.value;
+                            else if(field === 'cellSize') { card.style.cellSize = parseInt(el.value)||100; }
+                            if (field !== 'rows' && field !== 'cols') {
+                                if (field === 'cellSize' || field === 'title' || field === 'bingoType') {
+                                    renderActiveGroup();
+                                } else {
+                                    renderBoardsList();
+                                }
+                            }
+                        });
+                    });
+                    wrapper.querySelector('[data-action="applySize"]')?.addEventListener('click', () => {
+                        const card = group.cards[cardIdx];
+                        const rowsInp = wrapper.querySelector('[data-field="rows"]');
+                        const colsInp = wrapper.querySelector('[data-field="cols"]');
+                        const newRows = parseInt(rowsInp.value) || 3;
+                        const newCols = parseInt(colsInp.value) || 3;
+                        applySizeToCard(card, newRows, newCols);
+                        if(selectedCell && selectedCell.cardIdx === cardIdx && (selectedCell.row>=newRows || selectedCell.col>=newCols)) selectedCell = null;
+                        renderActiveGroup();
+                    });
+                    
+                    const swatch = wrapper.querySelector('.color-swatch');
+                    const colorInput = wrapper.querySelector('input[type="color"]');
+                    if(swatch && colorInput) {
+                        swatch.addEventListener('click', () => colorInput.click());
+                        colorInput.addEventListener('input', (e) => {
+                            const newColor = e.target.value;
+                            group.cards[cardIdx].style.bgColor = newColor;
+                            updateCardColor(wrapper, newColor);
+                        });
+                    }
+                    wrapper.querySelector('[data-action="resetColor"]')?.addEventListener('click', () => {
+                        group.cards[cardIdx].style.bgColor = DEFAULT_CARD_BG;
+                        updateCardColor(wrapper, DEFAULT_CARD_BG);
+                        const hiddenInput = wrapper.querySelector('input[type="color"]');
+                        if (hiddenInput) hiddenInput.value = DEFAULT_CARD_BG;
+                    });
                 }
-            }
-        }
-
-        function handleCellClick(row, col) {
-            const board = getActiveBoard();
-            if (currentMode === 'player') {
-                const cell = board.cells[row][col];
-                cell.completed = !cell.completed;
-                renderActiveBoard();
-                if (checkBingo(board)) showBingoMessage();
-            } else {
-                selectedCellRow = row;
-                selectedCellCol = col;
-                const cell = board.cells[row][col];
+                wrapper.querySelector('.save-card-btn')?.addEventListener('click', ()=> saveCard(cardIdx));
+                wrapper.querySelector('.load-card-btn')?.addEventListener('click', ()=> loadCard(cardIdx));
+                wrapper.querySelector('.png-card-btn')?.addEventListener('click', ()=> exportCardPNG(cardIdx));
+                wrapper.querySelector('.delete-card-btn')?.addEventListener('click', ()=> deleteCard(cardIdx));
+            });
+            
+            restoreFocus(focusInfo);
+            
+            if(currentMode === 'creator' && selectedCell && selectedCell.groupIdx === activeGroupIdx){
+                const cell = group.cards[selectedCell.cardIdx].cells[selectedCell.row][selectedCell.col];
                 cellTextInp.value = cell.text || '';
                 cellImageInp.value = cell.imageUrl || '';
                 cellCaptionInp.value = cell.caption || '';
                 propertyPanel.style.display = 'block';
-                renderActiveBoard();
+                propertyPanel.querySelector('h4').textContent = t('properties');
+            } else propertyPanel.style.display = 'none';
+            
+            // Обновление текстов интерфейса
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                el.textContent = t(key);
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                el.placeholder = t(el.dataset.i18nPlaceholder);
+            });
+            themeToggleBtn.innerHTML = currentTheme === 'dark' ? t('lightTheme') : t('darkTheme');
+            saveGroupBtn.innerHTML = t('saveGroup');
+            loadGroupBtn.innerHTML = t('loadGroup');
+            newBoardBtn.innerHTML = t('newGroup');
+            modeBtns[0].innerHTML = t('creator');
+            modeBtns[1].innerHTML = t('player');
+            document.querySelector('.boards-sidebar p').textContent = t('clickToSelect');
+        }
+
+        function handleCellClick(cardIdx, row, col){
+            const group = boards[activeGroupIdx];
+            const card = group.cards[cardIdx];
+            if(currentMode === 'player'){
+                card.cells[row][col].completed = !card.cells[row][col].completed;
+                renderActiveGroup();
+                if(checkCardBingo(card)){
+                    const placeholder = document.querySelector(`.bingo-message-placeholder[data-card="${cardIdx}"]`);
+                    if(placeholder){
+                        const msg = document.createElement('div'); msg.className = 'bingo-message-local'; msg.textContent = t('bingoMsg');
+                        placeholder.innerHTML = ''; placeholder.appendChild(msg); setTimeout(()=> msg.remove(), 1500);
+                    }
+                }
+            } else { 
+                selectedCell = { groupIdx: activeGroupIdx, cardIdx, row, col }; 
+                renderActiveGroup(); 
             }
         }
 
-        function updateCellProperty(field, value) {
-            if (selectedCellRow === -1) return;
-            const board = getActiveBoard();
-            const cell = board.cells[selectedCellRow][selectedCellCol];
-            cell[field] = value;
-            renderActiveBoard();
-            selectedCellRow = selectedCellRow; 
-            selectedCellCol = selectedCellCol;
-            propertyPanel.style.display = 'block';
+        function applySizeToCard(card, newRows, newCols){
+            const oldRows = card.rows, oldCols = card.cols;
+            const newCells = Array(newRows).fill().map((_,r)=>Array(newCols).fill().map((_,c)=>{
+                if(r<oldRows && c<oldCols && card.cells[r]?.[c]) return {...card.cells[r][c]};
+                return {text:'', imageUrl:'', caption:'', completed:false};
+            }));
+            card.rows = newRows; card.cols = newCols; card.cells = newCells;
         }
 
-        cellTextInp.addEventListener('input', (e) => updateCellProperty('text', e.target.value));
-        cellImageInp.addEventListener('input', (e) => updateCellProperty('imageUrl', e.target.value));
-        cellCaptionInp.addEventListener('input', (e) => updateCellProperty('caption', e.target.value));
+        function saveCard(idx){ const blob = new Blob([JSON.stringify(boards[activeGroupIdx].cards[idx], null, 2)], {type:'application/json'}); saveAs(blob, `${boards[activeGroupIdx].cards[idx].title||'card'}.bingo`); }
+        function loadCard(idx){
+            const input = document.createElement('input'); input.type='file'; input.accept='.bingo,application/json';
+            input.onchange = (e) => { if(!input.files[0]) return; const reader = new FileReader(); reader.onload = (ev) => { try{ boards[activeGroupIdx].cards[idx] = { ...defaultCard(), ...JSON.parse(ev.target.result) }; renderActiveGroup(); renderBoardsList(); }catch(err){ alert('Invalid file'); } }; reader.readAsText(input.files[0]); };
+            input.click();
+        }
+        function exportCardPNG(idx){ html2canvas(document.querySelector(`.card-wrapper[data-card-index="${idx}"] .bingo-grid`), { scale: 2, backgroundColor: null }).then(canvas => canvas.toBlob(blob => saveAs(blob, `card_${Date.now()}.png`))); }
+        function deleteCard(idx){
+            if(boards[activeGroupIdx].cards.length <= 1) { alert(t('cannotDeleteOnlyCard')); return; }
+            boards[activeGroupIdx].cards.splice(idx,1);
+            if(selectedCell && selectedCell.cardIdx === idx) selectedCell = null; else if(selectedCell && selectedCell.cardIdx > idx) selectedCell.cardIdx--;
+            renderActiveGroup(); renderBoardsList();
+        }
+        function addNewCard(){ boards[activeGroupIdx].cards.push(defaultCard()); renderActiveGroup(); renderBoardsList(); }
+        function saveGroup(){ 
+            boards[activeGroupIdx].title = groupTitleInput.value;
+            const blob = new Blob([JSON.stringify(boards[activeGroupIdx], null, 2)], {type:'application/json'}); 
+            saveAs(blob, `${boards[activeGroupIdx].title||'group'}.bingo`); 
+        }
+        function loadGroup(file){
+            const reader = new FileReader(); reader.onload = (e) => { try{ const loaded = JSON.parse(e.target.result); if(!loaded.cards) throw new Error(); boards.push(loaded); activeGroupIdx = boards.length-1; renderBoardsList(); renderActiveGroup(); }catch(err){ alert('Invalid group file'); } };
+            reader.readAsText(file);
+        }
+        function renderBoardsList(){
+            boardsListEl.innerHTML = '';
+            boards.forEach((group, idx) => {
+                const li = document.createElement('li'); li.className = `board-item ${idx === activeGroupIdx ? 'active' : ''}`;
+                li.innerHTML = `<span style="flex:1;">${escapeHtml(group.title)} (${group.cards.length})</span><div class="board-item-actions"><button data-delete-group="${idx}">🗑️</button></div>`;
+                li.querySelector('span').addEventListener('click', ()=>{ activeGroupIdx = idx; selectedCell = null; renderBoardsList(); renderActiveGroup(); });
+                li.querySelector('button').addEventListener('click', (e)=>{ e.stopPropagation(); if(boards.length<=1) return; boards.splice(idx,1); if(activeGroupIdx>=boards.length) activeGroupIdx=boards.length-1; renderBoardsList(); renderActiveGroup(); });
+                boardsListEl.appendChild(li);
+            });
+        }
+        function setMode(mode){ currentMode = mode; modeBtns.forEach(b=>b.classList.toggle('active', b.dataset.mode===mode)); selectedCell = null; renderActiveGroup(); }
+        function setTheme(theme){ currentTheme = theme; document.body.className = theme; themeToggleBtn.innerHTML = theme==='dark'? t('lightTheme') : t('darkTheme'); renderActiveGroup(); }
 
-        clearImageBtn.addEventListener('click', () => {
-            cellImageInp.value = '';
-            updateCellProperty('imageUrl', '');
-        });
+        function updateCellProperty(field, value) {
+            if (!selectedCell) return;
+            const { cardIdx, row, col } = selectedCell;
+            const card = boards[activeGroupIdx].cards[cardIdx];
+            const cell = card.cells[row][col];
+            cell[field] = value;
+            updateCellInDOM(cardIdx, row, col);
+        }
 
-        selectImageBtn.addEventListener('click', () => imageFileInput.click());
-        imageFileInput.addEventListener('change', (e) => {
-            const file = imageFileInput.files[0];
-            if (file) {
+        function init(){
+            if(!boards.length){ boards.push(defaultGroup()); activeGroupIdx = 0; }
+            renderBoardsList(); renderActiveGroup();
+            
+            groupTitleInput.addEventListener('input', (e) => {
+                if (currentMode === 'creator') {
+                    boards[activeGroupIdx].title = e.target.value;
+                    renderBoardsList();
+                }
+            });
+            
+            modeBtns.forEach(b=>b.addEventListener('click', ()=>setMode(b.dataset.mode)));
+            langSelect.addEventListener('change', (e)=>{ currentLang=e.target.value; renderActiveGroup(); renderBoardsList(); });
+            themeToggleBtn.addEventListener('click', ()=>setTheme(currentTheme==='dark'?'light':'dark'));
+            newBoardBtn.addEventListener('click', ()=>{ boards.push(defaultGroup()); activeGroupIdx = boards.length-1; renderBoardsList(); renderActiveGroup(); });
+            addCardBtn.addEventListener('click', addNewCard);
+            saveGroupBtn.addEventListener('click', saveGroup);
+            loadGroupBtn.addEventListener('click', ()=>groupFileInput.click());
+            groupFileInput.addEventListener('change', (e)=>{ if(groupFileInput.files[0]){ loadGroup(groupFileInput.files[0]); groupFileInput.value=''; } });
+            
+            cellTextInp.addEventListener('input', (e) => updateCellProperty('text', e.target.value));
+            cellImageInp.addEventListener('input', (e) => updateCellProperty('imageUrl', e.target.value));
+            cellCaptionInp.addEventListener('input', (e) => updateCellProperty('caption', e.target.value));
+            
+            clearImageBtn.addEventListener('click', ()=>{
+                cellImageInp.value = '';
+                updateCellProperty('imageUrl', '');
+            });
+            selectImageBtn.addEventListener('click', ()=>imageFileInput.click());
+            imageFileInput.addEventListener('change', (e)=>{
+                if(!imageFileInput.files[0]) return;
                 const reader = new FileReader();
                 reader.onload = (ev) => {
                     cellImageInp.value = ev.target.result;
                     updateCellProperty('imageUrl', ev.target.result);
                 };
-                reader.readAsDataURL(file);
-            }
-            imageFileInput.value = '';
-        });
-
-        function resizeGridFromInputs() {
-            if (currentMode === 'player') return;
-            const newRows = parseInt(rowsInput.value) || 3;
-            const newCols = parseInt(colsInput.value) || 3;
-            const board = getActiveBoard();
-            if (!board) return;
-            const oldRows = board.rows;
-            const oldCols = board.cols;
-            
-            const newCells = Array(newRows).fill().map((_, r) => Array(newCols).fill().map((_, c) => {
-                if (r < oldRows && c < oldCols && board.cells[r]?.[c]) {
-                    return { ...board.cells[r][c] };
-                } else {
-                    return { text: '', imageUrl: '', caption: '', completed: false };
-                }
-            }));
-            
-            board.rows = newRows;
-            board.cols = newCols;
-            board.cells = newCells;
-            selectedCellRow = selectedCellCol = -1;
-            propertyPanel.style.display = 'none';
-            renderActiveBoard();
-            renderBoardsList();
-        }
-
-        rowsInput.addEventListener('input', resizeGridFromInputs);
-        colsInput.addEventListener('input', resizeGridFromInputs);
-
-        function exportPNG() {
-            const grid = document.getElementById('bingo-grid');
-            if (!grid) return;
-            html2canvas(grid, { scale: 2, backgroundColor: null }).then(canvas => {
-                canvas.toBlob(blob => saveAs(blob, `bingo_${Date.now()}.png`));
+                reader.readAsDataURL(imageFileInput.files[0]);
+                imageFileInput.value = '';
             });
         }
-
-        function saveBingoFile() {
-            const board = getActiveBoard();
-            const data = { version: 1, ...board };
-            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-            saveAs(blob, `${board.title || 'bingo'}.bingo`);
-        }
-
-        function loadBingoFile(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const loaded = JSON.parse(e.target.result);
-                    const newBoard = {
-                        title: loaded.title || t('title'),
-                        description: loaded.description || '',
-                        bingoType: loaded.bingoType || 'standard',
-                        rows: loaded.rows || 3,
-                        cols: loaded.cols || 3,
-                        cells: loaded.cells || []
-                    };
-                    boards.push(newBoard);
-                    activeBoardIndex = boards.length - 1;
-                    renderBoardsList();
-                    renderActiveBoard();
-                    updateSizeInputs();
-                } catch (err) {
-                    alert('Invalid file');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function addNewBoard() {
-            boards.push(createDefaultBoard());
-            activeBoardIndex = boards.length - 1;
-            updateSizeInputs();
-            renderBoardsList();
-            renderActiveBoard();
-            selectedCellRow = selectedCellCol = -1;
-            propertyPanel.style.display = 'none';
-        }
-
-        function setMode(mode) {
-            currentMode = mode;
-            modeBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
-            selectedCellRow = selectedCellCol = -1;
-            propertyPanel.style.display = 'none';
-            // Блокировка инпутов размеров
-            rowsInput.disabled = (mode === 'player');
-            colsInput.disabled = (mode === 'player');
-            renderActiveBoard();
-        }
-
-        function escapeHtml(text) {
-            if (!text) return text;
-            return String(text).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
-        }
-
-        saveBingoBtn.addEventListener('click', saveBingoFile);
-        loadBtn.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => {
-            if (fileInput.files[0]) loadBingoFile(fileInput.files[0]);
-            fileInput.value = '';
-        });
-        exportPngBtn.addEventListener('click', exportPNG);
-        newBoardBtn.addEventListener('click', addNewBoard);
-        modeBtns.forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
-        langSelect.addEventListener('change', (e) => {
-            currentLang = e.target.value;
-            updateUILanguage();
-            renderActiveBoard();
-        });
-
-        initBoards();
-        updateUILanguage();
-        setTheme('dark');
+        init();
     })();
 </script>
 </body>
